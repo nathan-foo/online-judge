@@ -1,0 +1,32 @@
+name: test-service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/test-service/**"
+      - ".github/workflows/test-service-ci.yml"
+  pull_request:
+    paths:
+      - "services/test-service/**"
+      - ".github/workflows/test-service-ci.yml"
+
+jobs:
+  test-service:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: services/test-service
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: services/test-service/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run tests
+        run: python -m pytest

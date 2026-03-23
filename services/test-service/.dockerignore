@@ -1,0 +1,65 @@
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local development and editor files
+.git/
+.gitignore
+.gitattributes
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.log
+
+# Environment variables (only commit template files)
+.env
+.env*.local
+.env.development
+.env.test
+.env.production.local
+
+# Documentation
+*.md
+docs/
+
+# CI/CD configuration files
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+Jenkinsfile
+
+# OS-specific junk
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# AI/ML tool metadata and configs
+.cursor/
+.cursorrules
+.copilot/
+.copilotignore
+.github/copilot/
+.gemini/
+.anthropic/
+.kiro
+.claude
+AGENTS.md
+.agents/
+
+# AI-generated temp files
+*.aider*
+*.copilot*
+*.chatgpt*
+*.claude*
+*.gemini*
+*.openai*
+*.anthropic*
