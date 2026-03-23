@@ -3,6 +3,10 @@ services:
     build: ./client
     ports:
       - "3000:3000"
+  gateway:
+    build: ./gateway
+    ports:
+      - "8080:8080"
   test-service:
     build: ./services/test-service
     ports:
