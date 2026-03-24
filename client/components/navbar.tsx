@@ -38,7 +38,14 @@ const Navbar = () => {
                     </div>
                 </Show>
                 <Show when="signed-in">
-                    <UserButton />
+                    <div className="flex gap-2">
+                        <div className="flex items-center justify-center">
+                            <UserButton />
+                        </div>
+                        <Button variant='tertiary'>
+                            <Link href='/pricing'>Premium</Link>
+                        </Button>
+                    </div>
                 </Show>
             </div>
         </nav>
