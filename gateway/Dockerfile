@@ -2,10 +2,11 @@ FROM golang:1.26.1 AS builder
 
 WORKDIR /app
 
-COPY go.mod .
+COPY go.mod go.sum ./
 COPY cmd/ ./cmd/
 COPY internal/ ./internal/
 
+RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux go build -o api-gateway ./cmd/api-gateway
 
 FROM gcr.io/distroless/static-debian12:nonroot

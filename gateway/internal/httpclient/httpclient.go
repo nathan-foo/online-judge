@@ -16,8 +16,8 @@ func CallHelloAPI() (string, error) {
 	}
 	defer res.Body.Close()
 
-	body, _ := io.ReadAll(res.Body)
-	return string(body), nil
+	body, err := io.ReadAll(res.Body)
+	return string(body), err
 }
 
 func getTestServiceURL() string {

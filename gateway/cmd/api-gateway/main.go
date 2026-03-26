@@ -7,13 +7,25 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/nathan-foo/online-judge/gateway/internal/auth"
+	"github.com/nathan-foo/online-judge/gateway/internal/config"
 	"github.com/nathan-foo/online-judge/gateway/internal/router"
 )
 
 const serverPort = 8080
 
 func main() {
-	mux := router.NewMux()
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Error loading config")
+	}
+
+	authn, err := auth.NewMiddleware(cfg)
+	if err != nil {
+		log.Fatalf("Error authenticating")
+	}
+
+	mux := router.NewMux(authn)
 	server := http.Server{
 		Addr:         fmt.Sprintf(":%d", serverPort),
 		Handler:      mux,

@@ -5,10 +5,11 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/nathan-foo/online-judge/gateway/internal/auth"
 	"github.com/nathan-foo/online-judge/gateway/internal/handler"
 )
 
-func NewMux() *http.ServeMux {
+func NewMux(authn *auth.Middleware) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -22,6 +23,6 @@ func NewMux() *http.ServeMux {
 		fmt.Fprintf(w, "Server: %s %s", r.Method, r.URL.Path)
 	})
 
-	mux.HandleFunc("/hello", handler.HandleHello)
+	mux.Handle("/hello", authn.RequireSession(http.HandlerFunc(handler.HandleHello)))
 	return mux
 }
