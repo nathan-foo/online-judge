@@ -1,10 +1,13 @@
 package main
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/nathan-foo/online-judge/gateway/internal/auth"
@@ -36,13 +39,29 @@ func main() {
 		Addr:         fmt.Sprintf(":%d", serverPort),
 		Handler:      mux,
 		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 60 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		WriteTimeout: 20 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
-	log.Printf("Server running on port :%d", serverPort)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatalf("Error running http server: %v", err)
+	go func() {
+		log.Printf("Server running on port :%d", serverPort)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Error running http server: %v", err)
+		}
+	}()
+
+	<-ctx.Done()
+	log.Println("Shutting down server...")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Fatalf("Error shutting down server: %v", err)
 	}
+
+	log.Println("Server stopped")
 }

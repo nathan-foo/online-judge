@@ -13,6 +13,7 @@ services:
       - clerk_secret_key
     depends_on:
       - test-service
+    stop_grace_period: 30s
   test-service:
     build: ./services/test-service
     ports:
