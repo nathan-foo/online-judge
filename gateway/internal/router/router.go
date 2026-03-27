@@ -19,9 +19,7 @@ func NewMux(authn *auth.Middleware, p *proxy.Proxy) *chi.Mux {
 	r.Use(middleware.Timeout(time.Second * 60))
 
 	r.Route("/test", func(r chi.Router) {
-		// r.With(authn.WithAuth).Mount("/hello", http.StripPrefix("/test", p.TestHandler()))
-		r.Mount("/", http.StripPrefix("/test", p.TestHandler()))
-
+		r.With(authn.WithAuth).Mount("/", http.StripPrefix("/test", p.TestHandler()))
 	})
 
 	return r

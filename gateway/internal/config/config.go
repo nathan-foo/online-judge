@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"os"
+	"strings"
 
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -23,10 +24,10 @@ type EndpointConfig struct {
 func LoadConfig() (*Config, error) {
 	cfg := &Config{
 		Auth: AuthConfig{
-			os.Getenv("CLERK_SECRET_KEY"),
+			getConfig("CLERK_SECRET_KEY"),
 		},
 		Endpoints: EndpointConfig{
-			os.Getenv("TEST_SERVICE_URL"),
+			getConfig("TEST_SERVICE_URL"),
 		},
 	}
 
@@ -38,11 +39,26 @@ func LoadConfig() (*Config, error) {
 }
 
 func (cfg *Config) Validate() error {
-	// if cfg.Auth.CLERK_SECRET_KEY == "" {
-	// 	return errors.New("CLERK_SECRET_KEY is required")
-	// }
+	if cfg.Auth.CLERK_SECRET_KEY == "" {
+		return errors.New("CLERK_SECRET_KEY is required")
+	}
 	if cfg.Endpoints.TEST_SERVICE_URL == "" {
 		return errors.New("TEST_SERVICE_URL is required")
 	}
 	return nil
+}
+
+func getConfig(key string) string {
+	if val := os.Getenv(key); val != "" {
+		return val
+	}
+
+	path := "/run/secrets/" + strings.ToLower(key)
+	data, err := os.ReadFile(path)
+
+	if err != nil {
+		return ""
+	}
+
+	return strings.TrimSpace(string(data))
 }

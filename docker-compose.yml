@@ -9,9 +9,14 @@ services:
       - "8080:8080"
     environment:
       TEST_SERVICE_URL: "http://test-service:8000"
+    secrets:
+      - clerk_secret_key
     depends_on:
       - test-service
   test-service:
     build: ./services/test-service
     ports:
       - "8001:8000"
+secrets:
+  clerk_secret_key:
+    file: ./secrets/clerk_secret_key.txt
