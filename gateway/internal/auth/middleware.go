@@ -12,11 +12,11 @@ import (
 type Middleware struct{}
 
 func NewMiddleware(cfg *config.Config) (*Middleware, error) {
-	clerk.SetKey(cfg.ClerkSecretKey)
+	clerk.SetKey(cfg.Auth.CLERK_SECRET_KEY)
 	return &Middleware{}, nil
 }
 
-func (m *Middleware) RequireSession(next http.Handler) http.Handler {
+func (m *Middleware) WithAuth(next http.Handler) http.Handler {
 	return clerkhttp.WithHeaderAuthorization()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, ok := clerk.SessionClaimsFromContext(r.Context())
 		if !ok {

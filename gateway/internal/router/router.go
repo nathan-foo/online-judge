@@ -1,28 +1,28 @@
 package router
 
 import (
-	"fmt"
-	"log"
 	"net/http"
+	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/nathan-foo/online-judge/gateway/internal/auth"
-	"github.com/nathan-foo/online-judge/gateway/internal/handler"
+	"github.com/nathan-foo/online-judge/gateway/internal/proxy"
 )
 
-func NewMux(authn *auth.Middleware) *http.ServeMux {
-	mux := http.NewServeMux()
+func NewMux(authn *auth.Middleware, p *proxy.Proxy) *chi.Mux {
+	r := chi.NewRouter()
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("%s %s", r.Method, r.URL.Path)
+	r.Use(middleware.RequestID)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.Timeout(time.Second * 60))
 
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
+	r.Route("/test", func(r chi.Router) {
+		// r.With(authn.WithAuth).Mount("/hello", http.StripPrefix("/test", p.TestHandler()))
+		r.Mount("/", http.StripPrefix("/test", p.TestHandler()))
 
-		fmt.Fprintf(w, "Server: %s %s", r.Method, r.URL.Path)
 	})
 
-	mux.Handle("/hello", authn.RequireSession(http.HandlerFunc(handler.HandleHello)))
-	return mux
+	return r
 }

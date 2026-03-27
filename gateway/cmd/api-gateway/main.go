@@ -9,6 +9,7 @@ import (
 
 	"github.com/nathan-foo/online-judge/gateway/internal/auth"
 	"github.com/nathan-foo/online-judge/gateway/internal/config"
+	"github.com/nathan-foo/online-judge/gateway/internal/proxy"
 	"github.com/nathan-foo/online-judge/gateway/internal/router"
 )
 
@@ -17,20 +18,25 @@ const serverPort = 8080
 func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("Error loading config")
+		log.Fatalf("Error loading config: %v", err)
 	}
 
 	authn, err := auth.NewMiddleware(cfg)
 	if err != nil {
-		log.Fatalf("Error authenticating")
+		log.Fatalf("Error loading middleware: %v", err)
 	}
 
-	mux := router.NewMux(authn)
+	p, err := proxy.NewProxy(cfg)
+	if err != nil {
+		log.Fatalf("Error loading proxy: %v", err)
+	}
+
+	mux := router.NewMux(authn, p)
 	server := http.Server{
 		Addr:         fmt.Sprintf(":%d", serverPort),
 		Handler:      mux,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 60 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
 
