@@ -9,6 +9,7 @@ services:
       - "8080:8080"
     environment:
       TEST_SERVICE_URL: "http://test-service:8000"
+      ALLOWED_ORIGINS: "http://localhost:3000"
     secrets:
       - clerk_secret_key
     depends_on:

@@ -34,7 +34,9 @@ func main() {
 		log.Fatalf("Error loading proxy: %v", err)
 	}
 
-	mux := router.NewMux(authn, p)
+	allowedOrigins := cfg.AllowedOrigins
+
+	mux := router.NewMux(allowedOrigins, authn, p)
 	server := http.Server{
 		Addr:         fmt.Sprintf(":%d", serverPort),
 		Handler:      mux,

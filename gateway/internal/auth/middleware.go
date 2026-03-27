@@ -12,7 +12,7 @@ import (
 type Middleware struct{}
 
 func NewMiddleware(cfg *config.Config) (*Middleware, error) {
-	clerk.SetKey(cfg.Auth.CLERK_SECRET_KEY)
+	clerk.SetKey(cfg.Auth.ClerkSecretKey)
 	return &Middleware{}, nil
 }
 

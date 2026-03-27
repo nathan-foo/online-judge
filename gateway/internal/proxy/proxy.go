@@ -13,7 +13,7 @@ type Proxy struct {
 }
 
 func NewProxy(cfg *config.Config) (*Proxy, error) {
-	testUrl, err := url.Parse(cfg.Endpoints.TEST_SERVICE_URL)
+	testUrl, err := url.Parse(cfg.Endpoints.TestServiceUrl)
 	if err != nil {
 		return nil, err
 	}

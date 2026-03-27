@@ -9,16 +9,17 @@ import (
 )
 
 type Config struct {
-	Auth      AuthConfig
-	Endpoints EndpointConfig
+	Auth           AuthConfig
+	Endpoints      EndpointConfig
+	AllowedOrigins []string
 }
 
 type AuthConfig struct {
-	CLERK_SECRET_KEY string
+	ClerkSecretKey string
 }
 
 type EndpointConfig struct {
-	TEST_SERVICE_URL string
+	TestServiceUrl string
 }
 
 func LoadConfig() (*Config, error) {
@@ -29,6 +30,7 @@ func LoadConfig() (*Config, error) {
 		Endpoints: EndpointConfig{
 			getConfig("TEST_SERVICE_URL"),
 		},
+		AllowedOrigins: parseOrigins(getConfig("ALLOWED_ORIGINS")),
 	}
 
 	if err := cfg.Validate(); err != nil {
@@ -39,13 +41,27 @@ func LoadConfig() (*Config, error) {
 }
 
 func (cfg *Config) Validate() error {
-	if cfg.Auth.CLERK_SECRET_KEY == "" {
+	if cfg.Auth.ClerkSecretKey == "" {
 		return errors.New("CLERK_SECRET_KEY is required")
 	}
-	if cfg.Endpoints.TEST_SERVICE_URL == "" {
+	if cfg.Endpoints.TestServiceUrl == "" {
 		return errors.New("TEST_SERVICE_URL is required")
 	}
+	if len(cfg.AllowedOrigins) == 0 {
+		return errors.New("ALLOWED_ORIGINS is required")
+	}
 	return nil
+}
+
+func parseOrigins(s string) []string {
+	if s == "" {
+		return nil
+	}
+	origins := strings.Split(s, ",")
+	for i := range origins {
+		origins[i] = strings.TrimSpace(origins[i])
+	}
+	return origins
 }
 
 func getConfig(key string) string {
