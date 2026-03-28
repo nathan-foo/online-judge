@@ -1,9 +1,12 @@
 package proxy
 
 import (
+	"encoding/json"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"time"
 
 	"github.com/nathan-foo/online-judge/gateway/internal/config"
 )
@@ -17,8 +20,35 @@ func NewProxy(cfg *config.Config) (*Proxy, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	transport := &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 20,
+		MaxConnsPerHost:     100,
+		IdleConnTimeout:     90 * time.Second,
+
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: 10 * time.Second,
+	}
+
 	return &Proxy{
-		testProxy: httputil.NewSingleHostReverseProxy(testUrl),
+		testProxy: &httputil.ReverseProxy{
+			Rewrite: func(r *httputil.ProxyRequest) {
+				r.SetURL(testUrl)
+				r.Out.Host = r.In.Host
+			},
+			Transport: transport,
+			ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadGateway)
+				json.NewEncoder(w).Encode(map[string]string{"error": "service temporarily unavailable"})
+			},
+		},
 	}, nil
 }
 
