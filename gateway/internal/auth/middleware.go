@@ -11,8 +11,8 @@ import (
 
 type Middleware struct{}
 
-func NewMiddleware(cfg *config.Config) (*Middleware, error) {
-	clerk.SetKey(cfg.Auth.ClerkSecretKey)
+func NewMiddleware(authConfig config.AuthConfig) (*Middleware, error) {
+	clerk.SetKey(authConfig.ClerkSecretKey)
 	return &Middleware{}, nil
 }
 

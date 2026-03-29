@@ -15,15 +15,35 @@ services:
     environment:
       TEST_SERVICE_URL: "http://test-service:8000"
       ALLOWED_ORIGINS: "http://localhost:3000"
+      REDIS_URL: "redis://redis:6379/0"
+      RATE_LIMIT_GLOBAL: "100"
+      RATE_LIMIT_ROUTE: "10"
     secrets:
       - clerk_secret_key
     depends_on:
-      - test-service
+      test-service:
+        condition: service_started
+      redis:
+        condition: service_healthy
     stop_grace_period: 30s
   test-service:
     build: ./services/test-service
     ports:
       - "8001:8000"
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 secrets:
   clerk_secret_key:
     file: ./secrets/clerk_secret_key.txt
+volumes:
+  redis_data:

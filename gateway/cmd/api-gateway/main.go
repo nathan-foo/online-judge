@@ -13,6 +13,8 @@ import (
 	"github.com/nathan-foo/online-judge/gateway/internal/auth"
 	"github.com/nathan-foo/online-judge/gateway/internal/config"
 	"github.com/nathan-foo/online-judge/gateway/internal/proxy"
+	"github.com/nathan-foo/online-judge/gateway/internal/ratelimit"
+	"github.com/nathan-foo/online-judge/gateway/internal/redis"
 	"github.com/nathan-foo/online-judge/gateway/internal/router"
 )
 
@@ -24,19 +26,33 @@ func main() {
 		log.Fatalf("Error loading config: %v", err)
 	}
 
-	authn, err := auth.NewMiddleware(cfg)
+	redisConfig := cfg.Redis
+
+	rdb, err := redis.NewClient(redisConfig)
 	if err != nil {
-		log.Fatalf("Error loading middleware: %v", err)
+		log.Fatalf("Error connecting to redis: %v", err)
+	}
+	defer rdb.Close()
+
+	rl := ratelimit.NewRateLimiter(rdb, redisConfig)
+
+	authConfig := cfg.Auth
+
+	authn, err := auth.NewMiddleware(authConfig)
+	if err != nil {
+		log.Fatalf("Error loading clerk middleware: %v", err)
 	}
 
-	p, err := proxy.NewProxy(cfg)
+	endpointConfig := cfg.Endpoints
+
+	p, err := proxy.NewProxy(endpointConfig)
 	if err != nil {
 		log.Fatalf("Error loading proxy: %v", err)
 	}
 
 	allowedOrigins := cfg.AllowedOrigins
 
-	mux := router.NewMux(allowedOrigins, authn, p)
+	mux := router.NewMux(allowedOrigins, authn, p, rl)
 	server := http.Server{
 		Addr:         fmt.Sprintf(":%d", serverPort),
 		Handler:      mux,

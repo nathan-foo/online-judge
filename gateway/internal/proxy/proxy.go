@@ -15,8 +15,8 @@ type Proxy struct {
 	testProxy *httputil.ReverseProxy
 }
 
-func NewProxy(cfg *config.Config) (*Proxy, error) {
-	testUrl, err := url.Parse(cfg.Endpoints.TestServiceUrl)
+func NewProxy(endpointConfig config.EndpointConfig) (*Proxy, error) {
+	testUrl, err := url.Parse(endpointConfig.TestServiceUrl)
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"os"
+	"strconv"
 	"strings"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -11,6 +12,7 @@ import (
 type Config struct {
 	Auth           AuthConfig
 	Endpoints      EndpointConfig
+	Redis          RedisConfig
 	AllowedOrigins []string
 }
 
@@ -22,6 +24,12 @@ type EndpointConfig struct {
 	TestServiceUrl string
 }
 
+type RedisConfig struct {
+	RedisUrl        string
+	RateLimitGlobal int
+	RateLimitRoute  int
+}
+
 func LoadConfig() (*Config, error) {
 	cfg := &Config{
 		Auth: AuthConfig{
@@ -29,6 +37,11 @@ func LoadConfig() (*Config, error) {
 		},
 		Endpoints: EndpointConfig{
 			getConfig("TEST_SERVICE_URL"),
+		},
+		Redis: RedisConfig{
+			getConfig("REDIS_URL"),
+			getConfigInt("RATE_LIMIT_GLOBAL", 100),
+			getConfigInt("RATE_LIMIT_ROUTE", 10),
 		},
 		AllowedOrigins: parseOrigins(getConfig("ALLOWED_ORIGINS")),
 	}
@@ -46,6 +59,9 @@ func (cfg *Config) Validate() error {
 	}
 	if cfg.Endpoints.TestServiceUrl == "" {
 		return errors.New("TEST_SERVICE_URL is required")
+	}
+	if cfg.Redis.RedisUrl == "" {
+		return errors.New("REDIS_URL is required")
 	}
 	if len(cfg.AllowedOrigins) == 0 {
 		return errors.New("ALLOWED_ORIGINS is required")
@@ -77,4 +93,18 @@ func getConfig(key string) string {
 	}
 
 	return strings.TrimSpace(string(data))
+}
+
+func getConfigInt(key string, fallback int) int {
+	val := getConfig(key)
+	if val == "" {
+		return fallback
+	}
+
+	num, err := strconv.Atoi(val)
+	if err != nil {
+		return fallback
+	}
+
+	return num
 }

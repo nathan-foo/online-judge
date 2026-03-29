@@ -4,14 +4,16 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/nathan-foo/online-judge/gateway/internal/auth"
+	"github.com/nathan-foo/online-judge/gateway/internal/proxy"
+	"github.com/nathan-foo/online-judge/gateway/internal/ratelimit"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	"github.com/nathan-foo/online-judge/gateway/internal/auth"
-	"github.com/nathan-foo/online-judge/gateway/internal/proxy"
 )
 
-func NewMux(allowedOrigins []string, authn *auth.Middleware, p *proxy.Proxy) *chi.Mux {
+func NewMux(allowedOrigins []string, authn *auth.Middleware, p *proxy.Proxy, rl *ratelimit.RateLimiter) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -25,9 +27,12 @@ func NewMux(allowedOrigins []string, authn *auth.Middleware, p *proxy.Proxy) *ch
 		MaxAge:           300,
 	}))
 	r.Use(middleware.Timeout(20 * time.Second))
+	r.Use(rl.Global())
 
 	r.Route("/test", func(r chi.Router) {
-		r.With(authn.WithAuth).Mount("/", http.StripPrefix("/test", p.TestHandler()))
+		r.Use(authn.WithAuth)
+		r.Use(rl.Route())
+		r.Mount("/", http.StripPrefix("/test", p.TestHandler()))
 	})
 
 	return r
