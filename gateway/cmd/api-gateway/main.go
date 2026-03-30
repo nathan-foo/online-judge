@@ -51,7 +51,7 @@ func main() {
 		Addr:         fmt.Sprintf(":%d", serverPort),
 		Handler:      mux,
 		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 20 * time.Second,
+		WriteTimeout: 25 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
 
@@ -68,7 +68,7 @@ func main() {
 	<-ctx.Done()
 	log.Println("Shutting down server...")
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
