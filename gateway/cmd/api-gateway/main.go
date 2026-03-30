@@ -27,6 +27,9 @@ func main() {
 	}
 
 	redisConfig := cfg.Redis
+	authConfig := cfg.Auth
+	endpointConfig := cfg.Endpoints
+	allowedOrigins := cfg.AllowedOrigins
 
 	rdb, err := redis.NewClient(redisConfig)
 	if err != nil {
@@ -36,21 +39,12 @@ func main() {
 
 	rl := ratelimit.NewRateLimiter(rdb, redisConfig)
 
-	authConfig := cfg.Auth
-
-	authn, err := auth.NewMiddleware(authConfig)
-	if err != nil {
-		log.Fatalf("Error loading clerk middleware: %v", err)
-	}
-
-	endpointConfig := cfg.Endpoints
+	authn := auth.NewMiddleware(authConfig)
 
 	p, err := proxy.NewProxy(endpointConfig)
 	if err != nil {
 		log.Fatalf("Error loading proxy: %v", err)
 	}
-
-	allowedOrigins := cfg.AllowedOrigins
 
 	mux := router.NewMux(allowedOrigins, authn, p, rl)
 	server := http.Server{

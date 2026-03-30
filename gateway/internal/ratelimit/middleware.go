@@ -1,6 +1,7 @@
 package ratelimit
 
 import (
+	"log"
 	"net"
 	"net/http"
 	"strconv"
@@ -37,6 +38,7 @@ func newMiddleware(l *SlidingWindowLimiter, f keyFunc) func(http.Handler) http.H
 
 			result, err := l.Allow(r.Context(), key)
 			if err != nil {
+				log.Println("Redis server down")
 				next.ServeHTTP(w, r)
 				return
 			}

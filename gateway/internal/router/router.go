@@ -24,7 +24,7 @@ func NewMux(allowedOrigins []string, authn *auth.Middleware, p *proxy.Proxy, rl 
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Authorization", "Content-Type"},
 		AllowCredentials: true,
-		MaxAge:           300,
+		MaxAge:           3600,
 	}))
 	r.Use(middleware.Timeout(20 * time.Second))
 	r.Use(rl.Global())
@@ -32,8 +32,18 @@ func NewMux(allowedOrigins []string, authn *auth.Middleware, p *proxy.Proxy, rl 
 	r.Route("/test", func(r chi.Router) {
 		r.Use(authn.WithAuth)
 		r.Use(rl.Route())
+		r.Use(UploadHandler(1 << 20))
 		r.Mount("/", http.StripPrefix("/test", p.TestHandler()))
 	})
 
 	return r
+}
+
+func UploadHandler(maxBytes int64) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
+			next.ServeHTTP(w, r)
+		})
+	}
 }

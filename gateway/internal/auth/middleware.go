@@ -9,15 +9,19 @@ import (
 	clerkhttp "github.com/clerk/clerk-sdk-go/v2/http"
 )
 
-type Middleware struct{}
+type Middleware struct {
+	authorize func(http.Handler) http.Handler
+}
 
-func NewMiddleware(authConfig config.AuthConfig) (*Middleware, error) {
+func NewMiddleware(authConfig config.AuthConfig) *Middleware {
 	clerk.SetKey(authConfig.ClerkSecretKey)
-	return &Middleware{}, nil
+	return &Middleware{
+		authorize: clerkhttp.WithHeaderAuthorization(),
+	}
 }
 
 func (m *Middleware) WithAuth(next http.Handler) http.Handler {
-	return clerkhttp.WithHeaderAuthorization()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return m.authorize(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, ok := clerk.SessionClaimsFromContext(r.Context())
 		if !ok {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)

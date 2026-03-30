@@ -28,7 +28,7 @@ func NewProxy(endpointConfig config.EndpointConfig) (*Proxy, error) {
 		IdleConnTimeout:     90 * time.Second,
 
 		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
+			Timeout:   5 * time.Second,
 			KeepAlive: 30 * time.Second,
 		}).DialContext,
 
@@ -40,7 +40,6 @@ func NewProxy(endpointConfig config.EndpointConfig) (*Proxy, error) {
 		testProxy: &httputil.ReverseProxy{
 			Rewrite: func(r *httputil.ProxyRequest) {
 				r.SetURL(testUrl)
-				r.Out.Host = r.In.Host
 			},
 			Transport: transport,
 			ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
