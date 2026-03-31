@@ -9,25 +9,30 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
+const MaxUploadSize = 1 << 20
+
 type Config struct {
 	Auth           AuthConfig
-	Endpoints      EndpointConfig
 	Redis          RedisConfig
 	AllowedOrigins []string
+	Routes         []RouteConfig
 }
 
 type AuthConfig struct {
 	ClerkSecretKey string
 }
 
-type EndpointConfig struct {
-	TestServiceUrl string
-}
-
 type RedisConfig struct {
 	RedisUrl        string
 	RateLimitGlobal int
-	RateLimitRoute  int
+}
+
+type RouteConfig struct {
+	Prefix        string
+	ServiceUrl    string
+	RequireAuth   bool
+	RateLimit     int
+	MaxUploadSize int64
 }
 
 func LoadConfig() (*Config, error) {
@@ -35,15 +40,12 @@ func LoadConfig() (*Config, error) {
 		Auth: AuthConfig{
 			getConfig("CLERK_SECRET_KEY"),
 		},
-		Endpoints: EndpointConfig{
-			getConfig("TEST_SERVICE_URL"),
-		},
 		Redis: RedisConfig{
 			getConfig("REDIS_URL"),
 			getConfigInt("RATE_LIMIT_GLOBAL", 100),
-			getConfigInt("RATE_LIMIT_ROUTE", 10),
 		},
 		AllowedOrigins: parseOrigins(getConfig("ALLOWED_ORIGINS")),
+		Routes:         Routes,
 	}
 
 	if err := cfg.Validate(); err != nil {
@@ -57,14 +59,19 @@ func (cfg *Config) Validate() error {
 	if cfg.Auth.ClerkSecretKey == "" {
 		return errors.New("CLERK_SECRET_KEY is required")
 	}
-	if cfg.Endpoints.TestServiceUrl == "" {
-		return errors.New("TEST_SERVICE_URL is required")
-	}
 	if cfg.Redis.RedisUrl == "" {
 		return errors.New("REDIS_URL is required")
 	}
 	if len(cfg.AllowedOrigins) == 0 {
 		return errors.New("ALLOWED_ORIGINS is required")
+	}
+	for _, route := range cfg.Routes {
+		if route.Prefix == "" {
+			return errors.New("Route prefix is required")
+		}
+		if route.ServiceUrl == "" {
+			return errors.New("Service URL is required")
+		}
 	}
 	return nil
 }

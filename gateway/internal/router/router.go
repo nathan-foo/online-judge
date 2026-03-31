@@ -1,10 +1,12 @@
 package router
 
 import (
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/nathan-foo/online-judge/gateway/internal/auth"
+	"github.com/nathan-foo/online-judge/gateway/internal/config"
 	"github.com/nathan-foo/online-judge/gateway/internal/proxy"
 	"github.com/nathan-foo/online-judge/gateway/internal/ratelimit"
 
@@ -13,7 +15,8 @@ import (
 	"github.com/go-chi/cors"
 )
 
-func NewMux(allowedOrigins []string, authn *auth.Middleware, p *proxy.Proxy, rl *ratelimit.RateLimiter) *chi.Mux {
+func NewMux(allowedOrigins []string, routes []config.RouteConfig,
+	authn *auth.Middleware, rl *ratelimit.RateLimiter) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -30,12 +33,24 @@ func NewMux(allowedOrigins []string, authn *auth.Middleware, p *proxy.Proxy, rl 
 	r.Use(middleware.Timeout(20 * time.Second))
 	r.Use(rl.Global())
 
-	r.Route("/test", func(r chi.Router) {
-		r.Use(authn.WithAuth)
-		r.Use(rl.Route())
-		r.Use(UploadHandler(1 << 20))
-		r.Mount("/", http.StripPrefix("/test", p.TestHandler()))
-	})
+	for _, route := range routes {
+		handler, err := proxy.NewProxy(route.ServiceUrl, route.Prefix)
+		if err != nil {
+			log.Fatalf("Failed to create proxy for route %s: %v", route.Prefix, err)
+		}
+		r.Route(route.Prefix, func(r chi.Router) {
+			if route.RequireAuth {
+				r.Use(authn.WithAuth)
+			}
+			if route.RateLimit > 0 {
+				r.Use(rl.Route(route.RateLimit))
+			}
+			if route.MaxUploadSize > 0 {
+				r.Use(UploadHandler(route.MaxUploadSize))
+			}
+			r.Mount("/", handler)
+		})
+	}
 
 	return r
 }

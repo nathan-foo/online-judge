@@ -10,14 +10,14 @@ import (
 )
 
 type RateLimiter struct {
+	rdb    *redis.Client
 	global *SlidingWindowLimiter
-	route  *SlidingWindowLimiter
 }
 
 func NewRateLimiter(rdb *redis.Client, redisConfig config.RedisConfig) *RateLimiter {
 	return &RateLimiter{
+		rdb:    rdb,
 		global: NewSlidingWindowLimiter(rdb, redisConfig.RateLimitGlobal, time.Minute),
-		route:  NewSlidingWindowLimiter(rdb, redisConfig.RateLimitRoute, time.Minute),
 	}
 }
 
@@ -25,6 +25,7 @@ func (rl *RateLimiter) Global() func(http.Handler) http.Handler {
 	return newMiddleware(rl.global, ipKey)
 }
 
-func (rl *RateLimiter) Route() func(http.Handler) http.Handler {
-	return newMiddleware(rl.route, userKey)
+func (rl *RateLimiter) Route(limit int) func(http.Handler) http.Handler {
+	limiter := NewSlidingWindowLimiter(rl.rdb, limit, time.Minute)
+	return newMiddleware(limiter, userKey)
 }

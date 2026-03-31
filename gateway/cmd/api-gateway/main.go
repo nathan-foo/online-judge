@@ -12,7 +12,6 @@ import (
 
 	"github.com/nathan-foo/online-judge/gateway/internal/auth"
 	"github.com/nathan-foo/online-judge/gateway/internal/config"
-	"github.com/nathan-foo/online-judge/gateway/internal/proxy"
 	"github.com/nathan-foo/online-judge/gateway/internal/ratelimit"
 	"github.com/nathan-foo/online-judge/gateway/internal/redis"
 	"github.com/nathan-foo/online-judge/gateway/internal/router"
@@ -28,8 +27,8 @@ func main() {
 
 	redisConfig := cfg.Redis
 	authConfig := cfg.Auth
-	endpointConfig := cfg.Endpoints
 	allowedOrigins := cfg.AllowedOrigins
+	routes := cfg.Routes
 
 	rdb, err := redis.NewClient(redisConfig)
 	if err != nil {
@@ -41,12 +40,7 @@ func main() {
 
 	authn := auth.NewMiddleware(authConfig)
 
-	p, err := proxy.NewProxy(endpointConfig)
-	if err != nil {
-		log.Fatalf("Error loading proxy: %v", err)
-	}
-
-	mux := router.NewMux(allowedOrigins, authn, p, rl)
+	mux := router.NewMux(allowedOrigins, routes, authn, rl)
 	server := http.Server{
 		Addr:         fmt.Sprintf(":%d", serverPort),
 		Handler:      mux,
