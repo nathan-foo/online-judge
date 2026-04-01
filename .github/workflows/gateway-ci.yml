@@ -1,0 +1,29 @@
+name: gateway
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "gateway/**"
+      - ".github/workflows/gateway-ci.yml"
+  pull_request:
+    paths:
+      - "gateway/**"
+      - ".github/workflows/gateway-ci.yml"
+
+jobs:
+  gateway:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: gateway
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: gateway/go.mod
+          cache-dependency-path: gateway/go.sum
+      - name: Run build
+        run: go build ./cmd/api-gateway
