@@ -7,6 +7,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 var transport = &http.Transport{
@@ -36,6 +38,7 @@ func NewProxy(targetUrl string, prefix string) (http.Handler, error) {
 		},
 		Transport: transport,
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+			log.Error().Err(err).Str("path", r.URL.Path).Msg("proxy error")
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadGateway)
 			json.NewEncoder(w).Encode(map[string]string{"error": "service temporarily unavailable"})
