@@ -3,29 +3,33 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/nathan-foo/online-judge/gateway/internal/auth"
 	"github.com/nathan-foo/online-judge/gateway/internal/config"
+	"github.com/nathan-foo/online-judge/gateway/internal/logger"
 	"github.com/nathan-foo/online-judge/gateway/internal/ratelimit"
 	"github.com/nathan-foo/online-judge/gateway/internal/redis"
 	"github.com/nathan-foo/online-judge/gateway/internal/router"
 )
 
 func main() {
+	logger.Init()
+
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("Error loading config: %v", err)
+		log.Fatal().Err(err).Msg("failed to load config")
 	}
 
 	rdb, err := redis.NewClient(cfg.Redis)
 	if err != nil {
-		log.Fatalf("Error connecting to redis: %v", err)
+		log.Fatal().Err(err).Msg("failed to connect to redis")
 	}
 	defer rdb.Close()
 
@@ -46,21 +50,21 @@ func main() {
 	defer stop()
 
 	go func() {
-		log.Printf("Server running on port :%d", cfg.Port)
+		log.Info().Int("port", cfg.Port).Msg("server started")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Error running http server: %v", err)
+			log.Fatal().Err(err).Msg("http server error")
 		}
 	}()
 
 	<-ctx.Done()
-	log.Println("Shutting down server...")
+	log.Info().Msg("shutting down server")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		log.Fatalf("Error shutting down server: %v", err)
+		log.Fatal().Err(err).Msg("server shutdown error")
 	}
 
-	log.Println("Server stopped")
+	log.Info().Msg("server stopped")
 }

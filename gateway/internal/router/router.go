@@ -1,18 +1,19 @@
 package router
 
 import (
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/nathan-foo/online-judge/gateway/internal/auth"
 	"github.com/nathan-foo/online-judge/gateway/internal/config"
+	"github.com/nathan-foo/online-judge/gateway/internal/logger"
 	"github.com/nathan-foo/online-judge/gateway/internal/proxy"
 	"github.com/nathan-foo/online-judge/gateway/internal/ratelimit"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/rs/zerolog/log"
 )
 
 func NewMux(allowedOrigins []string, routes []config.RouteConfig,
@@ -20,7 +21,7 @@ func NewMux(allowedOrigins []string, routes []config.RouteConfig,
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
-	r.Use(middleware.Logger)
+	r.Use(logger.RequestLogger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Compress(5))
 	r.Use(cors.Handler(cors.Options{
@@ -36,7 +37,7 @@ func NewMux(allowedOrigins []string, routes []config.RouteConfig,
 	for _, route := range routes {
 		handler, err := proxy.NewProxy(route.ServiceUrl, route.Prefix)
 		if err != nil {
-			log.Fatalf("Failed to create proxy for route %s: %v", route.Prefix, err)
+			log.Fatal().Err(err).Str("route", route.Prefix).Msg("failed to create proxy")
 		}
 		r.Route(route.Prefix, func(r chi.Router) {
 			if route.RequireAuth {

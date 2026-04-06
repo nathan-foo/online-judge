@@ -1,12 +1,12 @@
 package ratelimit
 
 import (
-	"log"
 	"net"
 	"net/http"
 	"strconv"
 
 	"github.com/clerk/clerk-sdk-go/v2"
+	"github.com/rs/zerolog/log"
 )
 
 type keyFunc func(r *http.Request) (string, error)
@@ -38,7 +38,7 @@ func newMiddleware(l *SlidingWindowLimiter, f keyFunc) func(http.Handler) http.H
 
 			result, err := l.Allow(r.Context(), key)
 			if err != nil {
-				log.Println("Redis server down")
+				log.Warn().Err(err).Msg("rate limit check failed")
 				next.ServeHTTP(w, r)
 				return
 			}
