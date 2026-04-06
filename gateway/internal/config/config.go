@@ -16,6 +16,7 @@ type Config struct {
 	Redis          RedisConfig
 	AllowedOrigins []string
 	Routes         []RouteConfig
+	Port           int
 }
 
 type AuthConfig struct {
@@ -46,6 +47,7 @@ func LoadConfig() (*Config, error) {
 		},
 		AllowedOrigins: parseOrigins(getConfig("ALLOWED_ORIGINS")),
 		Routes:         Routes,
+		Port:           getConfigInt("PORT", 8080),
 	}
 
 	if err := cfg.Validate(); err != nil {

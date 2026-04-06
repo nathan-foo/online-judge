@@ -17,32 +17,25 @@ import (
 	"github.com/nathan-foo/online-judge/gateway/internal/router"
 )
 
-const serverPort = 8080
-
 func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
 
-	redisConfig := cfg.Redis
-	authConfig := cfg.Auth
-	allowedOrigins := cfg.AllowedOrigins
-	routes := cfg.Routes
-
-	rdb, err := redis.NewClient(redisConfig)
+	rdb, err := redis.NewClient(cfg.Redis)
 	if err != nil {
 		log.Fatalf("Error connecting to redis: %v", err)
 	}
 	defer rdb.Close()
 
-	rl := ratelimit.NewRateLimiter(rdb, redisConfig)
+	rl := ratelimit.NewRateLimiter(rdb, cfg.Redis)
 
-	authn := auth.NewMiddleware(authConfig)
+	authn := auth.NewMiddleware(cfg.Auth)
 
-	mux := router.NewMux(allowedOrigins, routes, authn, rl)
+	mux := router.NewMux(cfg.AllowedOrigins, cfg.Routes, authn, rl)
 	server := http.Server{
-		Addr:         fmt.Sprintf(":%d", serverPort),
+		Addr:         fmt.Sprintf(":%d", cfg.Port),
 		Handler:      mux,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 25 * time.Second,
@@ -53,7 +46,7 @@ func main() {
 	defer stop()
 
 	go func() {
-		log.Printf("Server running on port :%d", serverPort)
+		log.Printf("Server running on port :%d", cfg.Port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Error running http server: %v", err)
 		}
