@@ -32,7 +32,6 @@ func NewMux(allowedOrigins []string, routes []config.RouteConfig,
 
 	r.Group(func(r chi.Router) {
 		r.Use(securityHeaders)
-		r.Use(middleware.Compress(5))
 		r.Use(cors.Handler(cors.Options{
 			AllowedOrigins:   allowedOrigins,
 			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
@@ -40,7 +39,7 @@ func NewMux(allowedOrigins []string, routes []config.RouteConfig,
 			AllowCredentials: true,
 			MaxAge:           3600,
 		}))
-		r.Use(middleware.Timeout(20 * time.Second))
+		r.Use(middleware.Timeout(10 * time.Second))
 		r.Use(rl.Global())
 
 		for _, route := range routes {

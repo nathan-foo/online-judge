@@ -13,9 +13,9 @@ import (
 )
 
 var transport = &http.Transport{
-	MaxIdleConns:        100,
-	MaxIdleConnsPerHost: 20,
-	MaxConnsPerHost:     100,
+	MaxIdleConns:        1000,
+	MaxIdleConnsPerHost: 1000,
+	MaxConnsPerHost:     1000,
 	IdleConnTimeout:     90 * time.Second,
 
 	DialContext: (&net.Dialer{
