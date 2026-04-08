@@ -6,6 +6,7 @@ import (
 
 	"github.com/nathan-foo/online-judge/gateway/internal/auth"
 	"github.com/nathan-foo/online-judge/gateway/internal/config"
+	"github.com/nathan-foo/online-judge/gateway/internal/health"
 	"github.com/nathan-foo/online-judge/gateway/internal/logger"
 	"github.com/nathan-foo/online-judge/gateway/internal/proxy"
 	"github.com/nathan-foo/online-judge/gateway/internal/ratelimit"
@@ -17,8 +18,11 @@ import (
 )
 
 func NewMux(allowedOrigins []string, routes []config.RouteConfig,
-	authn *auth.Middleware, rl *ratelimit.RateLimiter) *chi.Mux {
+	authn *auth.Middleware, rl *ratelimit.RateLimiter, hc *health.Checker) *chi.Mux {
 	r := chi.NewRouter()
+
+	r.Get("/healthz", hc.Healthz)
+	r.Get("/readyz", hc.Readyz)
 
 	r.Use(middleware.RequestID)
 	r.Use(logger.RequestLogger)

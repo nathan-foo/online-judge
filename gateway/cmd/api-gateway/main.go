@@ -13,6 +13,7 @@ import (
 
 	"github.com/nathan-foo/online-judge/gateway/internal/auth"
 	"github.com/nathan-foo/online-judge/gateway/internal/config"
+	"github.com/nathan-foo/online-judge/gateway/internal/health"
 	"github.com/nathan-foo/online-judge/gateway/internal/logger"
 	"github.com/nathan-foo/online-judge/gateway/internal/ratelimit"
 	"github.com/nathan-foo/online-judge/gateway/internal/redis"
@@ -37,7 +38,13 @@ func main() {
 
 	authn := auth.NewMiddleware(cfg.Auth)
 
-	mux := router.NewMux(cfg.AllowedOrigins, cfg.Routes, authn, rl)
+	hc := health.NewChecker(
+		health.Check{Name: "redis", Fn: func(ctx context.Context) error {
+			return rdb.Ping(ctx).Err()
+		}},
+	)
+
+	mux := router.NewMux(cfg.AllowedOrigins, cfg.Routes, authn, rl, hc)
 	server := http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),
 		Handler:      mux,
