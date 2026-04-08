@@ -17,7 +17,6 @@ services:
       ALLOWED_ORIGINS: "http://localhost:3000"
       REDIS_URL: "redis://redis:6379/0"
       RATE_LIMIT_GLOBAL: "100"
-      RATE_LIMIT_ROUTE: "10"
     secrets:
       - clerk_secret_key
     depends_on:

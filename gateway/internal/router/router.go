@@ -21,41 +21,46 @@ func NewMux(allowedOrigins []string, routes []config.RouteConfig,
 	authn *auth.Middleware, rl *ratelimit.RateLimiter, hc *health.Checker) *chi.Mux {
 	r := chi.NewRouter()
 
-	r.Get("/healthz", hc.Healthz)
-	r.Get("/readyz", hc.Readyz)
-
 	r.Use(middleware.RequestID)
 	r.Use(logger.RequestLogger)
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.Compress(5))
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   allowedOrigins,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Authorization", "Content-Type"},
-		AllowCredentials: true,
-		MaxAge:           3600,
-	}))
-	r.Use(middleware.Timeout(20 * time.Second))
-	r.Use(rl.Global())
 
-	for _, route := range routes {
-		handler, err := proxy.NewProxy(route.ServiceUrl, route.Prefix)
-		if err != nil {
-			log.Fatal().Err(err).Str("route", route.Prefix).Msg("failed to create proxy")
+	r.Group(func(r chi.Router) {
+		r.Get("/healthz", hc.Healthz)
+		r.Get("/readyz", hc.Readyz)
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.Compress(5))
+		r.Use(cors.Handler(cors.Options{
+			AllowedOrigins:   allowedOrigins,
+			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
+			AllowedHeaders:   []string{"Authorization", "Content-Type"},
+			AllowCredentials: true,
+			MaxAge:           3600,
+		}))
+		r.Use(middleware.Timeout(20 * time.Second))
+		r.Use(rl.Global())
+
+		for _, route := range routes {
+			handler, err := proxy.NewProxy(route.ServiceUrl, route.Prefix)
+			if err != nil {
+				log.Fatal().Err(err).Str("route", route.Prefix).Msg("failed to create proxy")
+			}
+			r.Route(route.Prefix, func(r chi.Router) {
+				if route.RequireAuth {
+					r.Use(authn.WithAuth)
+				}
+				if route.RateLimit > 0 {
+					r.Use(rl.Route(route.RateLimit))
+				}
+				if route.MaxUploadSize > 0 {
+					r.Use(UploadHandler(route.MaxUploadSize))
+				}
+				r.Mount("/", handler)
+			})
 		}
-		r.Route(route.Prefix, func(r chi.Router) {
-			if route.RequireAuth {
-				r.Use(authn.WithAuth)
-			}
-			if route.RateLimit > 0 {
-				r.Use(rl.Route(route.RateLimit))
-			}
-			if route.MaxUploadSize > 0 {
-				r.Use(UploadHandler(route.MaxUploadSize))
-			}
-			r.Mount("/", handler)
-		})
-	}
+	})
 
 	return r
 }
