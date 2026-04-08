@@ -48,7 +48,7 @@ func newMiddleware(l *SlidingWindowLimiter, f keyFunc) func(http.Handler) http.H
 
 			if !result.Allowed {
 				w.Header().Set("Retry-After", strconv.Itoa(int(l.window.Seconds())))
-				http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
+				http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
 				return
 			}
 
