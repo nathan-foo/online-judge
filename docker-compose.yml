@@ -14,6 +14,7 @@ services:
       - "8080:8080"
     environment:
       TEST_SERVICE_URL: "http://test-service:8000"
+      TEST_SERVICE_URL_2: "http://test-service-2:8000"
       ALLOWED_ORIGINS: "http://localhost:3000"
       REDIS_URL: "redis://redis:6379/0"
       RATE_LIMIT_GLOBAL: "100"
@@ -21,6 +22,8 @@ services:
       - clerk_secret_key
     depends_on:
       test-service:
+        condition: service_started
+      test-service-2:
         condition: service_started
       redis:
         condition: service_healthy
@@ -35,6 +38,17 @@ services:
         hard: 65536
   test-service:
     build: ./services/test-service
+    expose:
+      - "8000"
+    restart: unless-stopped
+    sysctls:
+      - net.core.somaxconn=4096
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+  test-service-2:
+    build: ./services/test-service-2
     expose:
       - "8000"
     restart: unless-stopped
