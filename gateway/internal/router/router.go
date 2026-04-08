@@ -31,6 +31,7 @@ func NewMux(allowedOrigins []string, routes []config.RouteConfig,
 	})
 
 	r.Group(func(r chi.Router) {
+		r.Use(securityHeaders)
 		r.Use(middleware.Compress(5))
 		r.Use(cors.Handler(cors.Options{
 			AllowedOrigins:   allowedOrigins,
@@ -55,7 +56,7 @@ func NewMux(allowedOrigins []string, routes []config.RouteConfig,
 					r.Use(rl.Route(route.RateLimit))
 				}
 				if route.MaxUploadSize > 0 {
-					r.Use(UploadHandler(route.MaxUploadSize))
+					r.Use(uploadHandler(route.MaxUploadSize))
 				}
 				r.Mount("/", handler)
 			})
@@ -65,11 +66,19 @@ func NewMux(allowedOrigins []string, routes []config.RouteConfig,
 	return r
 }
 
-func UploadHandler(maxBytes int64) func(http.Handler) http.Handler {
+func uploadHandler(maxBytes int64) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func securityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		next.ServeHTTP(w, r)
+	})
 }
