@@ -19,12 +19,18 @@ func ipKey(r *http.Request) (string, error) {
 	return "ip:" + ip, nil
 }
 
-func userKey(r *http.Request) (string, error) {
-	claims, ok := clerk.SessionClaimsFromContext(r.Context())
-	if !ok {
-		return ipKey(r)
+func routeKey(prefix string) keyFunc {
+	return func(r *http.Request) (string, error) {
+		claims, ok := clerk.SessionClaimsFromContext(r.Context())
+		if !ok {
+			key, err := ipKey(r)
+			if err != nil {
+				return "", err
+			}
+			return "route:" + prefix + ":" + key, nil
+		}
+		return "route:" + prefix + ":user:" + claims.Subject, nil
 	}
-	return "user:" + claims.Subject, nil
 }
 
 func newMiddleware(l *SlidingWindowLimiter, f keyFunc) func(http.Handler) http.Handler {

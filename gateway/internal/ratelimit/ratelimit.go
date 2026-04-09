@@ -25,7 +25,7 @@ func (rl *RateLimiter) Global() func(http.Handler) http.Handler {
 	return newMiddleware(rl.global, ipKey)
 }
 
-func (rl *RateLimiter) Route(limit int) func(http.Handler) http.Handler {
+func (rl *RateLimiter) Route(prefix string, limit int) func(http.Handler) http.Handler {
 	limiter := NewSlidingWindowLimiter(rl.rdb, limit, time.Minute)
-	return newMiddleware(limiter, userKey)
+	return newMiddleware(limiter, routeKey(prefix))
 }

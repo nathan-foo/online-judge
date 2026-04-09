@@ -52,7 +52,7 @@ func NewMux(allowedOrigins []string, routes []config.RouteConfig,
 					r.Use(authn.WithAuth)
 				}
 				if route.RateLimit > 0 {
-					r.Use(rl.Route(route.RateLimit))
+					r.Use(rl.Route(route.Prefix, route.RateLimit))
 				}
 				if route.MaxUploadSize > 0 {
 					r.Use(uploadHandler(route.MaxUploadSize))
