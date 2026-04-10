@@ -21,6 +21,7 @@ func NewMux(allowedOrigins []string, routes []config.RouteConfig,
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP) // For nginx tls/load balancing later on
 	r.Use(logger.RequestLogger)
 	r.Use(middleware.Recoverer)
 
