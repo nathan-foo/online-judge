@@ -34,7 +34,10 @@ This project is a work in progress.
 │       ├── redis
 │       └── router
 └── services
-    └── test-service
+    ├── test-service
+    │   ├── app
+    │   └── tests
+    └── test-service-2
         ├── app
         └── tests
 ```

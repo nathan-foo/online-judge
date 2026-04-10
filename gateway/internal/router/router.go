@@ -2,7 +2,6 @@ package router
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/nathan-foo/online-judge/gateway/internal/auth"
 	"github.com/nathan-foo/online-judge/gateway/internal/config"
@@ -39,7 +38,6 @@ func NewMux(allowedOrigins []string, routes []config.RouteConfig,
 			AllowCredentials: true,
 			MaxAge:           3600,
 		}))
-		r.Use(middleware.Timeout(10 * time.Second))
 		r.Use(rl.Global())
 
 		for _, route := range routes {
