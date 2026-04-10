@@ -2,7 +2,7 @@
 
 COMPOSE := docker compose
 
-.PHONY: setup client-setup python-setup up down build logs client
+.PHONY: setup client-setup python-setup docker-up docker-down build logs client
 
 setup: client-setup python-setup
 
@@ -19,10 +19,10 @@ python-setup:
 		"$$dir/.venv/bin/python" -m pip install -r "$$req"; \
 	done
 
-up:
+docker-up:
 	$(COMPOSE) up -d --build
 
-down:
+docker-down:
 	$(COMPOSE) down
 
 build:
