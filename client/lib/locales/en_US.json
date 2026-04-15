@@ -1,0 +1,95 @@
+{
+  "hero": {
+    "badge": "New",
+    "tagline": "Multiplayer code evaluation",
+    "title": "The competitive coding arena built for the classroom.",
+    "description": "A live, multiplayer judge that turns programming exercises into fast-paced, Kahoot-style competitions. Teachers author. Students race. Everyone learns.",
+    "getStarted": "Get Started",
+    "dashboard": "Dashboard",
+    "viewPricing": "View Pricing",
+    "codePreview": {
+      "filename": "two_sum.py",
+      "badge": "Template",
+      "code": "def two_sum(nums: list[int], target: int) -> list[int]:\n    \"\"\"\n    Given an array of integers nums and an integer\n    target, return indices of the two numbers such\n    that they add up to target.\n\n    You may assume that each input would have exactly\n    one solution, and you may not use the same element\n    twice.\n    \"\"\"\n    # Your code here\n    pass"
+    }
+  },
+  "features": {
+    "badge": "Features",
+    "title": "Everything you need to run live coding sessions",
+    "description": "Built for educators who want to make programming interactive, competitive, and measurable — at any scale.",
+    "items": [
+      {
+        "title": "Live Multiplayer Sessions",
+        "description": "Host real-time coding competitions. Students join with a session code and solve problems head-to-head."
+      },
+      {
+        "title": "Custom Problem Sets",
+        "description": "Author your own problems, define solution sets, and provide template code tailored to your curriculum."
+      },
+      {
+        "title": "Timed Rounds",
+        "description": "Set per-question time limits to keep sessions fast-paced. Students see a live countdown as they code."
+      },
+      {
+        "title": "Instant Evaluation",
+        "description": "Submissions run against your test cases in sandboxed containers. Pass/fail results appear in seconds."
+      },
+      {
+        "title": "Live Leaderboard",
+        "description": "Gamified scoring rewards speed and correctness. A live leaderboard keeps every student engaged."
+      },
+      {
+        "title": "Secure Execution",
+        "description": "All code runs in isolated containers. No need to worry about safety, resource abuse, or infrastructure."
+      }
+    ]
+  },
+  "steps": {
+    "badge": "How it works",
+    "title": "Up and running in minutes",
+    "description": "Three steps to your first live session. No complex setup, no infrastructure to manage.",
+    "items": [
+      {
+        "step": "01",
+        "title": "Create a Session",
+        "description": "Define your problems, write test cases, set template code, and configure time limits. Share the join code with your class."
+      },
+      {
+        "step": "02",
+        "title": "Students Compete",
+        "description": "Students enter the session code and solve problems in a built-in editor with real-time submission tracking and a live leaderboard."
+      },
+      {
+        "step": "03",
+        "title": "Review Results",
+        "description": "See a complete breakdown of every submission, score, and performance pattern. Identify where students struggled."
+      }
+    ]
+  },
+  "authoring": {
+    "badge": "Built for educators",
+    "title": "Define problems your way",
+    "description": "Create problem statements, provide starter template code, and define automated test suites that validate student submissions. Control every aspect of the coding experience — from time limits to the language runtime.",
+    "startAuthoring": "Start Authoring",
+    "createProblem": "Create a Problem",
+    "browseExamples": "Browse Examples",
+    "sessionConfig": {
+      "title": "Session Configuration",
+      "description": "A typical session setup for a data structures class.",
+      "fields": [
+        { "label": "Problems", "value": "5" },
+        { "label": "Time per problem", "value": "15 min" },
+        { "label": "Language", "value": "Python" },
+        { "label": "Test cases", "value": "12 total" },
+        { "label": "Max students", "value": "40" }
+      ]
+    }
+  },
+  "cta": {
+    "title": "Ready to get started?",
+    "description": "Start running live coding sessions for your students today. Free to get started — no credit card required.",
+    "signUp": "Sign Up Free",
+    "dashboard": "Go to Dashboard",
+    "viewPricing": "View Pricing"
+  }
+}
