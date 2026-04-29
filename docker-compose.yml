@@ -13,6 +13,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      USER_SERVICE_URL: "http://user-service:8000"
       TEST_SERVICE_URL: "http://test-service:8000"
       TEST_SERVICE_URL_2: "http://test-service-2:8000"
       ALLOWED_ORIGINS: "http://localhost:3000"
@@ -33,6 +34,17 @@ services:
       - net.core.somaxconn=4096
       - net.ipv4.tcp_max_syn_backlog=4096
     ulimits:        
+      nofile:
+        soft: 65536
+        hard: 65536
+  user-service:
+    build: ./services/user-service
+    expose:
+      - "8000"
+    restart: unless-stopped
+    sysctls:
+      - net.core.somaxconn=4096
+    ulimits:
       nofile:
         soft: 65536
         hard: 65536
