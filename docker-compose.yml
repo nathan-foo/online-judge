@@ -45,6 +45,7 @@ services:
       - "8000"
     secrets:
       - postgres_password
+      - clerk_webhook_secret
     depends_on:
       postgres:
         condition: service_healthy
@@ -91,7 +92,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d users"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -110,6 +111,8 @@ services:
 secrets:
   clerk_secret_key:
     file: ./secrets/clerk_secret_key.txt
+  clerk_webhook_secret:
+    file: ./secrets/clerk_webhook_secret.txt
   postgres_password:
     file: ./secrets/postgres_password.txt
 volumes:

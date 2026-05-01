@@ -3,12 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from .models import User
-from .schemas import UserCreate
-
-
-async def get_users(session: AsyncSession) -> list[User]:
-    result = await session.execute(select(User))
-    return list(result.scalars().all())
+from .schemas import UserCreate, UserUpdate
 
 
 async def create_user(session: AsyncSession, user_in: UserCreate) -> User:
@@ -31,6 +26,20 @@ async def get_user(session: AsyncSession, clerk_user_id: str) -> User:
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User not found",
+            detail="User not found",
         )
+    return user
+
+
+async def update_user(session: AsyncSession, user: User, user_in: UserUpdate) -> User:
+    for field, value in user_in.model_dump(exclude_unset=True).items():
+        setattr(user, field, value)
+    try:
+        await session.flush()
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User with this username already exists",
+        )
+    await session.refresh(user)
     return user

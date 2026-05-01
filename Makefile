@@ -1,8 +1,11 @@
+include .env
+export BASE_URL
+
 .DEFAULT_GOAL := setup
 
 COMPOSE := docker compose
 
-.PHONY: setup client-setup python-setup docker-up docker-down build logs client
+.PHONY: setup client-setup python-setup docker-up docker-down docker-ngrok build logs client
 
 setup: client-setup python-setup
 
@@ -25,11 +28,14 @@ docker-up:
 docker-down:
 	$(COMPOSE) down
 
+docker-ngrok:
+	$(COMPOSE) up -d --build && ngrok http --url=$(BASE_URL) 8080
+
 build:
-	${COMPOSE} build
+	$(COMPOSE) build
 
 logs:
-	${COMPOSE} logs -f
+	$(COMPOSE) logs -f
 
 client:
 	cd client && npm run dev
