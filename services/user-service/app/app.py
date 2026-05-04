@@ -25,24 +25,28 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-@app.post("/", status_code=status.HTTP_204_NO_CONTENT)
+@app.post("/sync", status_code=status.HTTP_204_NO_CONTENT)
 async def clerk_webhook(request: Request, session: AsyncSessionDep):
     try:
         event = Webhook(CLERK_WEBHOOK_SECRET).verify(await request.body(), dict(request.headers))
     except WebhookVerificationError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signature")
 
-    if event["type"] == "user.created":
+    if event["type"] in ("user.created", "user.updated"):
         data = event["data"]
         primary_id = data.get("primary_email_address_id")
-        email = next(e["email_address"] for e in data["email_addresses"] if e["id"] == primary_id)
-        await user_service.create_user(session, UserCreate(
+        email = next((e["email_address"] for e in data["email_addresses"] if e["id"] == primary_id), None)
+        if not email:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing primary email")
+        await user_service.sync_user(session, UserCreate(
             clerk_user_id=data["id"],
             email=email,
             avatar_url=data.get("image_url"),
             first_name=data.get("first_name"),
             last_name=data.get("last_name"),
         ))
+    elif event["type"] == "user.deleted":
+        await user_service.deactivate_user(session, event["data"]["id"])
 
 
 @app.get("/me", response_model=UserRead)

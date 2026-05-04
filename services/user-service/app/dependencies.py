@@ -17,7 +17,13 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing user identity",
         )
-    return await user_service.get_user(session, x_user_id)
+    user = await user_service.get_user(session, x_user_id)
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User is inactive"
+        )
+    return user
 
 
 CurrentUserDep = Annotated[User, Depends(get_current_user)]

@@ -6,18 +6,15 @@ from .models import User
 from .schemas import UserCreate, UserUpdate
 
 
-async def create_user(session: AsyncSession, user_in: UserCreate) -> User:
-    user = User(**user_in.model_dump())
-    session.add(user)
-    try:
-        await session.flush()
-    except IntegrityError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="User with this clerk_user_id or email already exists",
-        )
-    await session.refresh(user)
-    return user
+async def sync_user(session: AsyncSession, user_in: UserCreate) -> None:
+    result = await session.execute(select(User).where(User.clerk_user_id == user_in.clerk_user_id))
+    user = result.scalar_one_or_none()
+    if user:
+        for field, value in user_in.model_dump().items():
+            setattr(user, field, value)
+    else:
+        session.add(User(**user_in.model_dump()))
+    await session.flush()
 
 
 async def get_user(session: AsyncSession, clerk_user_id: str) -> User:
@@ -29,6 +26,14 @@ async def get_user(session: AsyncSession, clerk_user_id: str) -> User:
             detail="User not found",
         )
     return user
+
+
+async def deactivate_user(session: AsyncSession, clerk_user_id: str) -> None:
+    result = await session.execute(select(User).where(User.clerk_user_id == clerk_user_id))
+    user = result.scalar_one_or_none()
+    if user:
+        user.is_active = False
+        await session.flush()
 
 
 async def update_user(session: AsyncSession, user: User, user_in: UserUpdate) -> User:
