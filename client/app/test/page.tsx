@@ -5,7 +5,7 @@ import { useAuth } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
 
-type ServiceKey = "test" | "test2";
+type ServiceKey = "test" | "test2" | "userGet" | "userPatch";
 
 type ServiceState = {
   body: string | null;
@@ -14,14 +14,29 @@ type ServiceState = {
   status: number | null;
 };
 
-const SERVICES: Record<ServiceKey, { label: string; path: string }> = {
+const SERVICES: Record<
+  ServiceKey,
+  { label: string; path: string; method: "GET" | "PATCH" }
+> = {
   test: {
     label: "Test Service 1",
     path: "/test",
+    method: "GET",
   },
   test2: {
     label: "Test Service 2",
     path: "/test-2",
+    method: "GET",
+  },
+  userGet: {
+    label: "User Service - GET /me",
+    path: "/users/me",
+    method: "GET",
+  },
+  userPatch: {
+    label: "User Service - PATCH /me",
+    path: "/users/me",
+    method: "PATCH",
   },
 };
 
@@ -38,7 +53,23 @@ const INITIAL_STATE: Record<ServiceKey, ServiceState> = {
     loading: false,
     status: null,
   },
+  userGet: {
+    body: null,
+    error: null,
+    loading: false,
+    status: null,
+  },
+  userPatch: {
+    body: null,
+    error: null,
+    loading: false,
+    status: null,
+  },
 };
+
+const DEFAULT_PATCH_BODY = `{
+  "username": "new_username"
+}`;
 
 function getGatewayBaseUrl() {
   const configuredUrl = process.env.NEXT_PUBLIC_API_GATEWAY_URL;
@@ -70,6 +101,7 @@ export default function TestPage() {
   const { getToken } = useAuth();
   const [results, setResults] =
     useState<Record<ServiceKey, ServiceState>>(INITIAL_STATE);
+  const [patchBody, setPatchBody] = useState<string>(DEFAULT_PATCH_BODY);
 
   async function callService(serviceKey: ServiceKey) {
     const service = SERVICES[serviceKey];
@@ -91,12 +123,22 @@ export default function TestPage() {
         throw new Error("Missing Clerk session token.");
       }
 
-      const response = await fetch(`${getGatewayBaseUrl()}${service.path}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${token}`,
+      };
+
+      const init: RequestInit = {
+        method: service.method,
+        headers,
         cache: "no-store",
-      });
+      };
+
+      if (service.method === "PATCH") {
+        headers["Content-Type"] = "application/json";
+        init.body = patchBody;
+      }
+
+      const response = await fetch(`${getGatewayBaseUrl()}${service.path}`, init);
 
       const body = await response.text();
       const formattedBody = formatResponseBody(
@@ -152,7 +194,7 @@ export default function TestPage() {
                   <div>
                     <h2 className="font-medium">{service.label}</h2>
                     <p className="text-xs text-muted-foreground">
-                      {getGatewayBaseUrl()}
+                      {service.method} {getGatewayBaseUrl()}
                       {service.path}
                     </p>
                   </div>
@@ -163,6 +205,16 @@ export default function TestPage() {
                     {result.loading ? "Loading..." : "Call Service"}
                   </Button>
                 </div>
+
+                {service.method === "PATCH" && (
+                  <textarea
+                    value={patchBody}
+                    onChange={(event) => setPatchBody(event.target.value)}
+                    spellCheck={false}
+                    className="mt-4 w-full rounded-md border bg-background p-2 font-mono text-xs"
+                    rows={5}
+                  />
+                )}
 
                 <div className="mt-4 rounded-md bg-muted p-3">
                   <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">

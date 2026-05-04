@@ -13,18 +13,21 @@ services:
     ports:
       - "8080:8080"
     environment:
-      TEST_SERVICE_URL: "http://test-service:8000"
-      TEST_SERVICE_URL_2: "http://test-service-2:8000"
+      USER_SERVICE_URL: "http://user-service:8000"
+      # TEST_SERVICE_URL: "http://test-service:8000"
+      # TEST_SERVICE_URL_2: "http://test-service-2:8000"
       ALLOWED_ORIGINS: "http://localhost:3000"
       REDIS_URL: "redis://redis:6379/0"
       RATE_LIMIT_GLOBAL: "100"
     secrets:
       - clerk_secret_key
     depends_on:
-      test-service:
+      user-service:
         condition: service_started
-      test-service-2:
-        condition: service_started
+      # test-service:
+      #   condition: service_started
+      # test-service-2:
+      #   condition: service_started
       redis:
         condition: service_healthy
     restart: unless-stopped
@@ -36,10 +39,16 @@ services:
       nofile:
         soft: 65536
         hard: 65536
-  test-service:
-    build: ./services/test-service
+  user-service:
+    build: ./services/user-service
     expose:
       - "8000"
+    secrets:
+      - postgres_password
+      - clerk_webhook_secret
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     sysctls:
       - net.core.somaxconn=4096
@@ -47,17 +56,46 @@ services:
       nofile:
         soft: 65536
         hard: 65536
-  test-service-2:
-    build: ./services/test-service-2
+  # test-service:
+  #   build: ./services/test-service
+  #   expose:
+  #     - "8000"
+  #   restart: unless-stopped
+  #   sysctls:
+  #     - net.core.somaxconn=4096
+  #   ulimits:
+  #     nofile:
+  #       soft: 65536
+  #       hard: 65536
+  # test-service-2:
+  #   build: ./services/test-service-2
+  #   expose:
+  #     - "8000"
+  #   restart: unless-stopped
+  #   sysctls:
+  #     - net.core.somaxconn=4096
+  #   ulimits:
+  #     nofile:
+  #       soft: 65536
+  #       hard: 65536
+  postgres:
+    image: postgres:16-alpine
     expose:
-      - "8000"
+      - "5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_DB: users
+    secrets:
+      - postgres_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
-    sysctls:
-      - net.core.somaxconn=4096
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
   redis:
     image: redis:7-alpine
     expose:
@@ -73,5 +111,10 @@ services:
 secrets:
   clerk_secret_key:
     file: ./secrets/clerk_secret_key.txt
+  clerk_webhook_secret:
+    file: ./secrets/clerk_webhook_secret.txt
+  postgres_password:
+    file: ./secrets/postgres_password.txt
 volumes:
   redis_data:
+  postgres_data:
