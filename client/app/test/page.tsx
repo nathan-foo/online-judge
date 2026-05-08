@@ -5,7 +5,7 @@ import { useAuth } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
 
-type ServiceKey = "test" | "test2" | "userGet" | "userPatch";
+type ServiceKey = "test" | "userGet" | "userPatch";
 
 type ServiceState = {
   body: string | null;
@@ -23,11 +23,6 @@ const SERVICES: Record<
     path: "/test",
     method: "GET",
   },
-  test2: {
-    label: "Test Service 2",
-    path: "/test-2",
-    method: "GET",
-  },
   userGet: {
     label: "User Service - GET /me",
     path: "/users/me",
@@ -42,12 +37,6 @@ const SERVICES: Record<
 
 const INITIAL_STATE: Record<ServiceKey, ServiceState> = {
   test: {
-    body: null,
-    error: null,
-    loading: false,
-    status: null,
-  },
-  test2: {
     body: null,
     error: null,
     loading: false,
