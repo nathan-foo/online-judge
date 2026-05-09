@@ -14,7 +14,6 @@ except FileNotFoundError:
     CLERK_WEBHOOK_SECRET = os.environ["CLERK_WEBHOOK_SECRET"]
 
 
-# TODO: Replace with Alembic migration later.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
