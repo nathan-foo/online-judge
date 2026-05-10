@@ -17,14 +17,15 @@ class Problem(Base):
         Index(
             "ix_problems_owner_active",
             "owner_id",
-            postgresql_where=text("is_deleted = false"),
+            text("created_at DESC"),
+            postgresql_where=text("NOT is_deleted"),
         ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     owner_id: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    type: Mapped[ProblemType] = mapped_column(Enum(ProblemType), index=True, nullable=False)
+    type: Mapped[ProblemType] = mapped_column(Enum(ProblemType), nullable=False)
 
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     payload: Mapped[dict] = mapped_column(JSONB, nullable=False)

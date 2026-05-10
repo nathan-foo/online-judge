@@ -61,3 +61,17 @@ class QuizRead(BaseModel):
     problems: list[QuizProblemRead]
     created_at: datetime
     updated_at: datetime
+
+
+class QuizSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    owner_id: str
+    title: str
+    description: Optional[str] = None
+    is_published: bool
+    is_public: bool
+    problem_count: int
+    created_at: datetime
+    updated_at: datetime

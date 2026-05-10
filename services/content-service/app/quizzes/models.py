@@ -13,7 +13,13 @@ class Quiz(Base):
         Index(
             "ix_quizzes_owner_active",
             "owner_id",
-            postgresql_where=text("is_deleted = false"),
+            text("created_at DESC"),
+            postgresql_where=text("NOT is_deleted"),
+        ),
+        Index(
+            "ix_quizzes_public_feed",
+            text("created_at DESC"),
+            postgresql_where=text("is_public AND is_published AND NOT is_deleted"),
         ),
     )
 
@@ -23,9 +29,11 @@ class Quiz(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    is_published: Mapped[bool] = mapped_column(Boolean, default=False, index=True, nullable=False)
-    is_public: Mapped[bool] = mapped_column(Boolean, default=False, index=True, nullable=False)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_public: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    problem_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -46,7 +54,7 @@ class Quiz(Base):
 class QuizProblem(Base):
     __tablename__ = "quiz_problems"
     __table_args__ = (
-        UniqueConstraint("quiz_id", "position", name="uq_quiz_position"),
+        UniqueConstraint("quiz_id", "position", name="uq_quiz_position", deferrable=True, initially="DEFERRED"),
         Index("ix_quiz_problems_problem_id", "problem_id"),
     )
 

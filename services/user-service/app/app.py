@@ -25,7 +25,10 @@ app = FastAPI(lifespan=lifespan)
 
 
 @app.post("/sync", status_code=status.HTTP_204_NO_CONTENT)
-async def clerk_webhook(request: Request, session: AsyncSessionDep):
+async def clerk_webhook(
+    request: Request,
+    session: AsyncSessionDep
+):
     try:
         event = Webhook(CLERK_WEBHOOK_SECRET).verify(await request.body(), dict(request.headers))
     except WebhookVerificationError:
@@ -49,10 +52,16 @@ async def clerk_webhook(request: Request, session: AsyncSessionDep):
 
 
 @app.get("/me", response_model=UserRead)
-async def get_me(current_user: CurrentUserDep):
+async def get_me(
+    current_user: CurrentUserDep
+):
     return current_user
 
 
 @app.patch("/me", response_model=UserRead)
-async def update_me(user_in: UserUpdate, current_user: CurrentUserDep, session: AsyncSessionDep):
+async def update_me(
+    user_in: UserUpdate,
+    current_user: CurrentUserDep,
+    session: AsyncSessionDep
+):
     return await user_service.update_user(session, current_user, user_in)

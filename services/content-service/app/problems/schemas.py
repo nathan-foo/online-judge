@@ -45,7 +45,7 @@ class TestCase(BaseModel):
     id: str = Field(min_length=1, max_length=64)
     stdin: str = Field(default="", max_length=10_000)
     expected_stdout: str = Field(max_length=10_000)
-    is_hidden: bool = False
+    is_example: bool = False
 
 
 class CodePayload(BaseModel):
@@ -67,8 +67,8 @@ class CodePayload(BaseModel):
             extra = set(getattr(self, field_name).keys()) - set(self.languages)
             if extra:
                 raise ValueError(f"{field_name} references languages not in `languages`: {extra}")
-        if not any(not t.is_hidden for t in self.test_cases):
-            raise ValueError("at least one test case must be visible (sample)")
+        if not any(t.is_example for t in self.test_cases):
+            raise ValueError("at least one test case must an example")
         return self
 
 
