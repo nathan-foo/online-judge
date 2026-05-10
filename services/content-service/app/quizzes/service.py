@@ -188,4 +188,4 @@ async def publish_quiz(
 ) -> Quiz:
     quiz.is_published = True
     await session.flush()
-    return quiz
+    return await get_quiz(session, quiz.owner_id, quiz.id)

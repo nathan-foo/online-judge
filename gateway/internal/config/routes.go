@@ -15,6 +15,13 @@ var Routes = []RouteConfig{
 		RateLimit:     10,
 		MaxUploadSize: MaxUploadSize,
 	},
+	{
+		Prefix:        "/content",
+		ServiceUrl:    getConfig("CONTENT_SERVICE_URL"),
+		RequireAuth:   true,
+		RateLimit:     10,
+		MaxUploadSize: MaxUploadSize,
+	},
 	// {
 	// 	Prefix:        "/test",
 	// 	ServiceUrl:    getConfig("TEST_SERVICE_URL"),

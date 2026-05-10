@@ -7,7 +7,7 @@ from sqlalchemy.sql import func
 from datetime import datetime
 from ..shared.database import Base
 
-class ProblemType(enum.Enum):
+class ProblemType(str, enum.Enum):
     MULTIPLE_CHOICE = "multiple_choice"
     CODE = "code"
 
