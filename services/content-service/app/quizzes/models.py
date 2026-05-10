@@ -59,7 +59,7 @@ class QuizProblem(Base):
     )
 
     quiz_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("quizzes.id", ondelete="CASCADE"), primary_key=True)
-    problem_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("problems.id", ondelete="RESTRICT"), primary_key=True)
+    problem_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("problems.id", ondelete="CASCADE"), primary_key=True)
 
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     points: Mapped[int] = mapped_column(Integer, nullable=False, default=1)

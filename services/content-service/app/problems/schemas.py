@@ -68,7 +68,7 @@ class CodePayload(BaseModel):
             if extra:
                 raise ValueError(f"{field_name} references languages not in `languages`: {extra}")
         if not any(t.is_example for t in self.test_cases):
-            raise ValueError("at least one test case must an example")
+            raise ValueError("at least one test case must be an example")
         return self
 
 
@@ -96,5 +96,15 @@ class ProblemRead(BaseModel):
     type: ProblemType
     title: str
     payload: ProblemPayload
+    created_at: datetime
+    updated_at: datetime
+
+
+class ProblemSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    type: ProblemType
+    title: str
     created_at: datetime
     updated_at: datetime

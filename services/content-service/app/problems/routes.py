@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query, status
 from ..shared.dependencies import get_current_user_id, CurrentUserIdDep, AsyncSessionDep
 from .models import ProblemType
-from .schemas import ProblemCreate, ProblemUpdate, ProblemRead
+from .schemas import ProblemCreate, ProblemUpdate, ProblemRead, ProblemSummary
 from . import service
 
 router = APIRouter(
@@ -21,7 +21,7 @@ async def create_problem(
     return await service.create_problem(session, user_id, problem_in)
 
 
-@router.get("/", response_model=list[ProblemRead])
+@router.get("/", response_model=list[ProblemSummary])
 async def list_problems(
     user_id: CurrentUserIdDep,
     session: AsyncSessionDep,

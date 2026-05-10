@@ -75,3 +75,16 @@ class QuizSummary(BaseModel):
     problem_count: int
     created_at: datetime
     updated_at: datetime
+
+
+class QuizPublicSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    title: str
+    description: Optional[str] = None
+    is_published: bool
+    is_public: bool
+    problem_count: int
+    created_at: datetime
+    updated_at: datetime

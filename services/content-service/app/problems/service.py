@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import load_only
 from .models import Problem, ProblemType
 from .schemas import ProblemCreate, ProblemUpdate
 
@@ -24,6 +25,15 @@ async def create_problem(
     return problem
 
 
+_PROBLEM_SUMMARY_LOAD = load_only(
+    Problem.id,
+    Problem.type,
+    Problem.title,
+    Problem.created_at,
+    Problem.updated_at,
+)
+
+
 async def list_problems(
     session: AsyncSession,
     owner_id: str,
@@ -31,7 +41,11 @@ async def list_problems(
     limit: int = 20,
     offset: int = 0,
 ) -> list[Problem]:
-    stmt = select(Problem).where(Problem.owner_id == owner_id, Problem.is_deleted == False)
+    stmt = (
+        select(Problem)
+        .where(Problem.owner_id == owner_id, Problem.is_deleted == False)
+        .options(_PROBLEM_SUMMARY_LOAD)
+    )
     if type is not None:
         stmt = stmt.where(Problem.type == type)
     stmt = stmt.order_by(Problem.created_at.desc()).limit(limit).offset(offset)

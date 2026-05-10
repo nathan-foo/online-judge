@@ -1,7 +1,7 @@
 import uuid
 from fastapi import APIRouter, Depends, Query, status
 from ..shared.dependencies import get_current_user_id, CurrentUserIdDep, AsyncSessionDep
-from .schemas import QuizCreate, QuizRead, QuizSummary, QuizUpdate
+from .schemas import QuizCreate, QuizRead, QuizSummary, QuizPublicSummary, QuizUpdate
 from . import service
 
 router = APIRouter(
@@ -29,7 +29,7 @@ async def list_quizzes(
     return await service.list_quizzes(session, user_id, limit, offset)
 
 
-@router.get("/public", response_model=list[QuizSummary])
+@router.get("/public", response_model=list[QuizPublicSummary])
 async def list_public_quizzes(
     session: AsyncSessionDep,
     limit: int = Query(default=20, ge=1, le=100),
