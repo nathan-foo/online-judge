@@ -5,7 +5,14 @@ import { useAuth } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
 
-type ServiceKey = "test" | "userGet" | "userPatch";
+type Method = "GET" | "POST" | "PATCH" | "DELETE";
+
+type ServiceConfig = {
+  label: string;
+  path: string;
+  method: Method;
+  defaultBody?: string;
+};
 
 type ServiceState = {
   body: string | null;
@@ -14,10 +21,40 @@ type ServiceState = {
   status: number | null;
 };
 
-const SERVICES: Record<
-  ServiceKey,
-  { label: string; path: string; method: "GET" | "PATCH" }
-> = {
+const USER_PATCH_BODY = `{
+  "username": "new_username"
+}`;
+
+const PROBLEM_CREATE_BODY = `{
+  "title": "Sample MC question",
+  "payload": {
+    "type": "multiple_choice",
+    "prompt": "What is 2 + 2?",
+    "choices": [
+      { "id": "a", "text": "3" },
+      { "id": "b", "text": "4" },
+      { "id": "c", "text": "5" }
+    ],
+    "correct_choice_ids": ["b"]
+  }
+}`;
+
+const PROBLEM_PATCH_BODY = `{
+  "title": "Renamed problem"
+}`;
+
+const QUIZ_CREATE_BODY = `{
+  "title": "Sample quiz",
+  "description": "A quiz",
+  "is_public": false,
+  "problems": []
+}`;
+
+const QUIZ_PATCH_BODY = `{
+  "title": "Renamed quiz"
+}`;
+
+const SERVICES: Record<string, ServiceConfig> = {
   test: {
     label: "Test Service 1",
     path: "/test",
@@ -32,33 +69,84 @@ const SERVICES: Record<
     label: "User Service - PATCH /me",
     path: "/users/me",
     method: "PATCH",
+    defaultBody: USER_PATCH_BODY,
+  },
+  problemCreate: {
+    label: "Problem - Create",
+    path: "/content/problems/",
+    method: "POST",
+    defaultBody: PROBLEM_CREATE_BODY,
+  },
+  problemList: {
+    label: "Problem - List",
+    path: "/content/problems/",
+    method: "GET",
+  },
+  problemGet: {
+    label: "Problem - Get",
+    path: "/content/problems/:id",
+    method: "GET",
+  },
+  problemPatch: {
+    label: "Problem - Patch",
+    path: "/content/problems/:id",
+    method: "PATCH",
+    defaultBody: PROBLEM_PATCH_BODY,
+  },
+  problemDelete: {
+    label: "Problem - Delete",
+    path: "/content/problems/:id",
+    method: "DELETE",
+  },
+  quizCreate: {
+    label: "Quiz - Create",
+    path: "/content/quizzes/",
+    method: "POST",
+    defaultBody: QUIZ_CREATE_BODY,
+  },
+  quizList: {
+    label: "Quiz - List",
+    path: "/content/quizzes/",
+    method: "GET",
+  },
+  quizListPublic: {
+    label: "Quiz - List public",
+    path: "/content/quizzes/public",
+    method: "GET",
+  },
+  quizGet: {
+    label: "Quiz - Get",
+    path: "/content/quizzes/:id",
+    method: "GET",
+  },
+  quizPatch: {
+    label: "Quiz - Patch",
+    path: "/content/quizzes/:id",
+    method: "PATCH",
+    defaultBody: QUIZ_PATCH_BODY,
+  },
+  quizDelete: {
+    label: "Quiz - Delete",
+    path: "/content/quizzes/:id",
+    method: "DELETE",
+  },
+  quizPublish: {
+    label: "Quiz - Publish",
+    path: "/content/quizzes/:id/publish",
+    method: "POST",
   },
 };
 
-const INITIAL_STATE: Record<ServiceKey, ServiceState> = {
-  test: {
-    body: null,
-    error: null,
-    loading: false,
-    status: null,
-  },
-  userGet: {
-    body: null,
-    error: null,
-    loading: false,
-    status: null,
-  },
-  userPatch: {
-    body: null,
-    error: null,
-    loading: false,
-    status: null,
-  },
-};
+type ServiceKey = keyof typeof SERVICES;
 
-const DEFAULT_PATCH_BODY = `{
-  "username": "new_username"
-}`;
+const SERVICE_KEYS = Object.keys(SERVICES) as ServiceKey[];
+
+function buildInitial<T>(value: () => T): Record<ServiceKey, T> {
+  return Object.fromEntries(SERVICE_KEYS.map((key) => [key, value()])) as Record<
+    ServiceKey,
+    T
+  >;
+}
 
 function getGatewayBaseUrl() {
   const configuredUrl = process.env.NEXT_PUBLIC_API_GATEWAY_URL;
@@ -88,12 +176,40 @@ function formatResponseBody(body: string, contentType: string | null) {
 
 export default function TestPage() {
   const { getToken } = useAuth();
-  const [results, setResults] =
-    useState<Record<ServiceKey, ServiceState>>(INITIAL_STATE);
-  const [patchBody, setPatchBody] = useState<string>(DEFAULT_PATCH_BODY);
+  const [results, setResults] = useState<Record<ServiceKey, ServiceState>>(() =>
+    buildInitial(() => ({
+      body: null,
+      error: null,
+      loading: false,
+      status: null,
+    }))
+  );
+  const [bodies, setBodies] = useState<Record<ServiceKey, string>>(() =>
+    Object.fromEntries(
+      SERVICE_KEYS.map((key) => [key, SERVICES[key].defaultBody ?? ""])
+    ) as Record<ServiceKey, string>
+  );
+  const [ids, setIds] = useState<Record<ServiceKey, string>>(() =>
+    buildInitial(() => "")
+  );
 
   async function callService(serviceKey: ServiceKey) {
     const service = SERVICES[serviceKey];
+    const id = ids[serviceKey].trim();
+    const needsId = service.path.includes(":id");
+
+    if (needsId && !id) {
+      setResults((current) => ({
+        ...current,
+        [serviceKey]: {
+          body: null,
+          error: "Enter an id.",
+          loading: false,
+          status: null,
+        },
+      }));
+      return;
+    }
 
     setResults((current) => ({
       ...current,
@@ -122,12 +238,16 @@ export default function TestPage() {
         cache: "no-store",
       };
 
-      if (service.method === "PATCH") {
+      if (service.defaultBody !== undefined) {
         headers["Content-Type"] = "application/json";
-        init.body = patchBody;
+        init.body = bodies[serviceKey];
       }
 
-      const response = await fetch(`${getGatewayBaseUrl()}${service.path}`, init);
+      const path = needsId
+        ? service.path.replace(":id", encodeURIComponent(id))
+        : service.path;
+
+      const response = await fetch(`${getGatewayBaseUrl()}${path}`, init);
 
       const body = await response.text();
       const formattedBody = formatResponseBody(
@@ -170,9 +290,11 @@ export default function TestPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          {(Object.keys(SERVICES) as ServiceKey[]).map((serviceKey) => {
+          {SERVICE_KEYS.map((serviceKey) => {
             const service = SERVICES[serviceKey];
             const result = results[serviceKey];
+            const needsId = service.path.includes(":id");
+            const hasBody = service.defaultBody !== undefined;
 
             return (
               <section
@@ -195,13 +317,33 @@ export default function TestPage() {
                   </Button>
                 </div>
 
-                {service.method === "PATCH" && (
-                  <textarea
-                    value={patchBody}
-                    onChange={(event) => setPatchBody(event.target.value)}
+                {needsId && (
+                  <input
+                    value={ids[serviceKey]}
+                    onChange={(event) =>
+                      setIds((current) => ({
+                        ...current,
+                        [serviceKey]: event.target.value,
+                      }))
+                    }
+                    placeholder="id"
                     spellCheck={false}
                     className="mt-4 w-full rounded-md border bg-background p-2 font-mono text-xs"
-                    rows={5}
+                  />
+                )}
+
+                {hasBody && (
+                  <textarea
+                    value={bodies[serviceKey]}
+                    onChange={(event) =>
+                      setBodies((current) => ({
+                        ...current,
+                        [serviceKey]: event.target.value,
+                      }))
+                    }
+                    spellCheck={false}
+                    className="mt-4 w-full rounded-md border bg-background p-2 font-mono text-xs"
+                    rows={service.method === "POST" ? 12 : 5}
                   />
                 )}
 
@@ -210,7 +352,9 @@ export default function TestPage() {
                     {result.status ? `Status ${result.status}` : "No response yet"}
                   </p>
                   <pre className="overflow-x-auto text-sm whitespace-pre-wrap break-words">
-                    {result.error ?? result.body ?? "Click the button to test this service."}
+                    {result.error
+                      ? `${result.error}${result.body ? `\n\n${result.body}` : ""}`
+                      : (result.body ?? "Click the button to test this service.")}
                   </pre>
                 </div>
               </section>
