@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -6,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 from .models import Quiz, QuizProblem
 from ..problems.models import Problem
-from .schemas import QuizCreate, QuizUpdate
+from .schemas import QuizCreate, QuizRead, QuizUpdate
 
 
 async def create_quiz(
@@ -48,7 +49,7 @@ async def create_quiz(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Duplicate problem or position in quiz",
         )
-    return await get_quiz(session, owner_id, quiz.id)
+    return await get_owned_quiz(session, owner_id, quiz.id)
 
 
 _QUIZ_SUMMARY_LOAD = load_only(
@@ -61,6 +62,7 @@ _QUIZ_SUMMARY_LOAD = load_only(
     Quiz.problem_count,
     Quiz.created_at,
     Quiz.updated_at,
+    Quiz.published_at,
 )
 
 
@@ -101,11 +103,10 @@ async def get_quiz(
     session: AsyncSession,
     viewer_id: str,
     quiz_id: uuid.UUID
-) -> Quiz:
+) -> Quiz | QuizRead:
     result = await session.execute(
         select(Quiz)
         .where(Quiz.id == quiz_id, Quiz.is_deleted == False)
-        .options(selectinload(Quiz.problems).selectinload(QuizProblem.problem))
     )
     quiz = result.scalar_one_or_none()
     if not quiz or (quiz.owner_id != viewer_id and not (quiz.is_public and quiz.is_published)):
@@ -113,7 +114,9 @@ async def get_quiz(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Quiz not found",
         )
-    return quiz
+    if quiz.owner_id != viewer_id:
+        return QuizRead.model_validate(quiz.published_snapshot)
+    return await get_owned_quiz(session, quiz.owner_id, quiz_id)
 
 
 async def get_owned_quiz(
@@ -171,7 +174,7 @@ async def update_quiz(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Duplicate problem or position in quiz",
         )
-    return await get_quiz(session, quiz.owner_id, quiz.id)
+    return await get_owned_quiz(session, quiz.owner_id, quiz.id)
 
 
 async def delete_quiz(
@@ -187,5 +190,7 @@ async def publish_quiz(
     quiz: Quiz,
 ) -> Quiz:
     quiz.is_published = True
+    quiz.published_at = datetime.now(timezone.utc)
+    quiz.published_snapshot = QuizRead.model_validate(quiz).model_dump(mode="json")
     await session.flush()
-    return await get_quiz(session, quiz.owner_id, quiz.id)
+    return await get_owned_quiz(session, quiz.owner_id, quiz.id)

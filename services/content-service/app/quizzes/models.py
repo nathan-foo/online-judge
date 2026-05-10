@@ -1,5 +1,6 @@
 import uuid
 from sqlalchemy import String, DateTime, Uuid, Integer, ForeignKey, Text, UniqueConstraint, Index, Boolean, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from typing import Optional
@@ -41,6 +42,10 @@ class Quiz(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+    published_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    published_snapshot: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
 
     problems: Mapped[list["QuizProblem"]] = relationship(
         back_populates="quiz",

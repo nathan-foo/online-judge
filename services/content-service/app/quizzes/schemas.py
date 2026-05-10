@@ -61,6 +61,7 @@ class QuizRead(BaseModel):
     problems: list[QuizProblemRead]
     created_at: datetime
     updated_at: datetime
+    published_at: Optional[datetime] = None
 
 
 class QuizSummary(BaseModel):
@@ -75,6 +76,7 @@ class QuizSummary(BaseModel):
     problem_count: int
     created_at: datetime
     updated_at: datetime
+    published_at: Optional[datetime] = None
 
 
 class QuizPublicSummary(BaseModel):
@@ -88,3 +90,4 @@ class QuizPublicSummary(BaseModel):
     problem_count: int
     created_at: datetime
     updated_at: datetime
+    published_at: Optional[datetime] = None
