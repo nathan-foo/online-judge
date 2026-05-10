@@ -72,12 +72,6 @@ class CodePayload(BaseModel):
         return self
 
 
-class CodeAnswer(BaseModel):
-    type: Literal[ProblemType.CODE]
-    language: Language
-    source: str = Field(min_length=1, max_length=20_000)
-
-
 ProblemPayload = Annotated[
     Union[MultipleChoicePayload, CodePayload],
     Field(discriminator="type"),
