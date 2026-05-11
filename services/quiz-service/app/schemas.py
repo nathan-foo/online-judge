@@ -20,7 +20,7 @@ class MultipleChoicePayload(BaseModel):
     shuffle_choices: bool = False
     image_url: Optional[HttpUrl] = Field(default=None, max_length=2000)
     explanation: Optional[str] = Field(default=None, max_length=2000)
-    
+
     @model_validator(mode="after")
     def _validate(self):
         ids = [c.id for c in self.choices]
@@ -57,7 +57,7 @@ class CodePayload(BaseModel):
     time_limit_ms: int = Field(default=2000, ge=1000, le=10_000)
     memory_limit_mb: int = Field(default=256, ge=16, le=1024)
     reference_solutions: dict[Language, str] = Field(default_factory=dict)
-    
+
     @model_validator(mode="after")
     def _validate(self):
         ids = [t.id for t in self.test_cases]
@@ -78,33 +78,106 @@ ProblemPayload = Annotated[
 ]
 
 
-class ProblemCreate(BaseModel):
+def _validate_contiguous_positions(positions: list[int]) -> None:
+    if sorted(positions) != list(range(1, len(positions) + 1)):
+        raise ValueError("positions must be contiguous integers starting at 1")
+
+
+class QuizProblemCreate(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     payload: ProblemPayload
+    position: int = Field(ge=1)
+    points: int = Field(default=1, ge=1, le=100)
 
 
-class ProblemUpdate(BaseModel):
+class QuizProblemUpsert(BaseModel):
+    id: Optional[uuid.UUID] = None
+    title: str = Field(min_length=1, max_length=255)
+    payload: ProblemPayload
+    position: int = Field(ge=1)
+    points: int = Field(default=1, ge=1, le=100)
+
+
+class QuizProblemRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    type: ProblemType
+    title: str
+    payload: ProblemPayload
+    position: int
+    points: int
+
+
+class QuizCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=255)
+    description: Optional[str] = Field(default=None, max_length=2000)
+    is_public: bool = False
+    problems: list[QuizProblemCreate] = []
+
+    @model_validator(mode="after")
+    def _validate(self):
+        _validate_contiguous_positions([p.position for p in self.problems])
+        return self
+
+
+class QuizUpdate(BaseModel):
     title: Optional[str] = Field(default=None, min_length=1, max_length=255)
-    payload: Optional[ProblemPayload] = None
+    description: Optional[str] = Field(default=None, max_length=2000)
+    is_public: Optional[bool] = None
+    problems: Optional[list[QuizProblemUpsert]] = None
+    version: Optional[int] = Field(default=None, ge=0)
+
+    @model_validator(mode="after")
+    def _validate(self):
+        if self.problems is None:
+            return self
+        _validate_contiguous_positions([p.position for p in self.problems])
+        ids = [p.id for p in self.problems if p.id is not None]
+        if len(ids) != len(set(ids)):
+            raise ValueError("duplicate problem ids in request")
+        return self
 
 
-class ProblemRead(BaseModel):
+class QuizRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
     owner_id: str
-    type: ProblemType
     title: str
-    payload: ProblemPayload
+    description: Optional[str] = None
+    is_published: bool
+    is_public: bool
+    problems: list[QuizProblemRead]
     created_at: datetime
     updated_at: datetime
+    published_at: Optional[datetime] = None
 
 
-class ProblemSummary(BaseModel):
+class QuizSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    type: ProblemType
+    owner_id: str
     title: str
+    description: Optional[str] = None
+    is_published: bool
+    is_public: bool
+    problem_count: int
     created_at: datetime
     updated_at: datetime
+    published_at: Optional[datetime] = None
+
+
+class QuizPublicSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    title: str
+    description: Optional[str] = None
+    is_published: bool
+    is_public: bool
+    problem_count: int
+    created_at: datetime
+    updated_at: datetime
+    published_at: Optional[datetime] = None

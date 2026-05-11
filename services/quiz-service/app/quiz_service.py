@@ -5,9 +5,51 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
+from sqlalchemy.orm.exc import StaleDataError
+from sqlalchemy.sql import func
 from .models import Quiz, QuizProblem
-from ..problems.models import Problem
-from .schemas import QuizCreate, QuizRead, QuizUpdate
+from .schemas import QuizCreate, QuizProblemCreate, QuizProblemUpsert, QuizRead, QuizUpdate
+
+
+def _build_problem(p: QuizProblemCreate | QuizProblemUpsert) -> QuizProblem:
+    return QuizProblem(
+        type=p.payload.type,
+        title=p.title,
+        payload=p.payload.model_dump(mode="json"),
+        position=p.position,
+        points=p.points,
+    )
+
+
+def _apply_problem_diff(quiz: Quiz, desired: list[QuizProblemUpsert]) -> None:
+    current_by_id = {p.id: p for p in quiz.problems}
+    desired_ids = {d.id for d in desired if d.id is not None}
+    unknown = desired_ids - current_by_id.keys()
+    if unknown:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unknown problem id(s) in request",
+        )
+    new_problems: list[QuizProblem] = []
+    for d in desired:
+        if d.id is None:
+            new_problems.append(_build_problem(d))
+            continue
+        existing = current_by_id[d.id]
+        payload_dict = d.payload.model_dump(mode="json")
+        if existing.title != d.title:
+            existing.title = d.title
+        if existing.type != d.payload.type:
+            existing.type = d.payload.type
+        if existing.payload != payload_dict:
+            existing.payload = payload_dict
+        if existing.position != d.position:
+            existing.position = d.position
+        if existing.points != d.points:
+            existing.points = d.points
+        new_problems.append(existing)
+    quiz.problems = new_problems
+    quiz.problem_count = len(desired)
 
 
 async def create_quiz(
@@ -15,31 +57,13 @@ async def create_quiz(
     owner_id: str,
     quiz_in: QuizCreate
 ) -> Quiz:
-    if quiz_in.problems:
-        problem_ids = [p.problem_id for p in quiz_in.problems]
-        result = await session.execute(
-            select(Problem.id).where(
-                Problem.id.in_(problem_ids),
-                Problem.owner_id == owner_id,
-                Problem.is_deleted == False,
-            )
-        )
-        owned = set(result.scalars().all())
-        if set(problem_ids) - owned:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="One or more problems not found or not owned by you",
-            )
     quiz = Quiz(
         owner_id=owner_id,
         title=quiz_in.title,
         description=quiz_in.description,
         is_public=quiz_in.is_public,
         problem_count=len(quiz_in.problems),
-        problems=[
-            QuizProblem(problem_id=p.problem_id, position=p.position, points=p.points)
-            for p in quiz_in.problems
-        ],
+        problems=[_build_problem(p) for p in quiz_in.problems],
     )
     session.add(quiz)
     try:
@@ -47,7 +71,7 @@ async def create_quiz(
     except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Duplicate problem or position in quiz",
+            detail="Duplicate position in quiz",
         )
     return await get_owned_quiz(session, owner_id, quiz.id)
 
@@ -107,6 +131,7 @@ async def get_quiz(
     result = await session.execute(
         select(Quiz)
         .where(Quiz.id == quiz_id, Quiz.is_deleted == False)
+        .options(selectinload(Quiz.problems))
     )
     quiz = result.scalar_one_or_none()
     if not quiz or (quiz.owner_id != viewer_id and not (quiz.is_public and quiz.is_published)):
@@ -116,7 +141,7 @@ async def get_quiz(
         )
     if quiz.owner_id != viewer_id:
         return QuizRead.model_validate(quiz.published_snapshot)
-    return await get_owned_quiz(session, quiz.owner_id, quiz_id)
+    return quiz
 
 
 async def get_owned_quiz(
@@ -127,7 +152,7 @@ async def get_owned_quiz(
     result = await session.execute(
         select(Quiz)
         .where(Quiz.id == quiz_id, Quiz.owner_id == owner_id, Quiz.is_deleted == False)
-        .options(selectinload(Quiz.problems).selectinload(QuizProblem.problem))
+        .options(selectinload(Quiz.problems))
     )
     quiz = result.scalar_one_or_none()
     if not quiz:
@@ -143,36 +168,28 @@ async def update_quiz(
     quiz: Quiz,
     quiz_in: QuizUpdate
 ) -> Quiz:
-    data = quiz_in.model_dump(exclude_unset=True, exclude={"problems"})
+    if quiz_in.version is not None and quiz_in.version != quiz.version:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Quiz was modified by another request",
+        )
+    data = quiz_in.model_dump(exclude_unset=True, exclude={"problems", "version"})
     for field, value in data.items():
         setattr(quiz, field, value)
     if quiz_in.problems is not None:
-        new_ids = [p.problem_id for p in quiz_in.problems]
-        if new_ids:
-            result = await session.execute(
-                select(Problem.id).where(
-                    Problem.id.in_(new_ids),
-                    Problem.owner_id == quiz.owner_id,
-                    Problem.is_deleted == False,
-                )
-            )
-            owned = set(result.scalars().all())
-            if set(new_ids) - owned:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="One or more problems not found or not owned by you",
-                )
-        quiz.problems = [
-            QuizProblem(problem_id=p.problem_id, position=p.position, points=p.points)
-            for p in quiz_in.problems
-        ]
-        quiz.problem_count = len(quiz_in.problems)
+        _apply_problem_diff(quiz, quiz_in.problems)
+        quiz.updated_at = func.now()
     try:
         await session.flush()
+    except StaleDataError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Quiz was modified by another request",
+        )
     except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Duplicate problem or position in quiz",
+            detail="Duplicate position in quiz",
         )
     return await get_owned_quiz(session, quiz.owner_id, quiz.id)
 
@@ -182,7 +199,13 @@ async def delete_quiz(
     quiz: Quiz
 ) -> None:
     quiz.is_deleted = True
-    await session.flush()
+    try:
+        await session.flush()
+    except StaleDataError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Quiz was modified by another request",
+        )
 
 
 async def publish_quiz(
@@ -192,5 +215,11 @@ async def publish_quiz(
     quiz.is_published = True
     quiz.published_at = datetime.now(timezone.utc)
     quiz.published_snapshot = QuizRead.model_validate(quiz).model_dump(mode="json")
-    await session.flush()
+    try:
+        await session.flush()
+    except StaleDataError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Quiz was modified by another request",
+        )
     return await get_owned_quiz(session, quiz.owner_id, quiz.id)

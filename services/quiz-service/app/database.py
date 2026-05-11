@@ -13,7 +13,7 @@ try:
 except FileNotFoundError:
     password = os.environ["POSTGRES_PASSWORD"]
 
-DATABASE_URL = f"postgresql+asyncpg://postgres:{password}@postgres:5432/content"
+DATABASE_URL = f"postgresql+asyncpg://postgres:{password}@postgres:5432/quizzes"
 
 engine = create_async_engine(
     DATABASE_URL

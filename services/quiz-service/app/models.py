@@ -1,12 +1,17 @@
 import uuid
-from sqlalchemy import String, DateTime, Uuid, Integer, ForeignKey, Text, UniqueConstraint, Index, Boolean, text
+import enum
+from sqlalchemy import String, DateTime, Uuid, Integer, ForeignKey, Text, UniqueConstraint, Index, Boolean, Enum, CheckConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from typing import Optional
 from datetime import datetime
-from ..shared.database import Base
-from ..problems.models import Problem
+from .database import Base
+
+
+class ProblemType(str, enum.Enum):
+    MULTIPLE_CHOICE = "multiple_choice"
+    CODE = "code"
 
 class Quiz(Base):
     __tablename__ = "quizzes"
@@ -35,6 +40,7 @@ class Quiz(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     problem_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -50,8 +56,10 @@ class Quiz(Base):
     problems: Mapped[list["QuizProblem"]] = relationship(
         back_populates="quiz",
         order_by="QuizProblem.position",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
+
+    __mapper_args__ = {"version_id_col": version}
 
     def __repr__(self) -> str:
         return f"<Quiz(id={self.id}, title={self.title})>"
@@ -60,14 +68,22 @@ class QuizProblem(Base):
     __tablename__ = "quiz_problems"
     __table_args__ = (
         UniqueConstraint("quiz_id", "position", name="uq_quiz_position", deferrable=True, initially="DEFERRED"),
-        Index("ix_quiz_problems_problem_id", "problem_id"),
+        CheckConstraint("position >= 1", name="ck_quiz_problem_position_positive"),
     )
 
-    quiz_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("quizzes.id", ondelete="CASCADE"), primary_key=True)
-    problem_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("problems.id", ondelete="CASCADE"), primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    quiz_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("quizzes.id", ondelete="CASCADE"), nullable=False
+    )
+
+    type: Mapped[ProblemType] = mapped_column(Enum(ProblemType), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
 
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     points: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
     quiz: Mapped[Quiz] = relationship(back_populates="problems")
-    problem: Mapped[Problem] = relationship()
+
+    def __repr__(self) -> str:
+        return f"<QuizProblem(id={self.id}, title={self.title})>"
