@@ -127,11 +127,7 @@ class QuizUpdate(BaseModel):
     is_public: Optional[bool] = None
     problems: Optional[list[QuizProblemUpsert]] = None
     version: int = Field(ge=0)
-
-
-class QuizPublish(BaseModel):
-    version: int = Field(ge=0)
-
+    
     @model_validator(mode="after")
     def _validate(self):
         if self.problems is None:
@@ -141,6 +137,10 @@ class QuizPublish(BaseModel):
         if len(ids) != len(set(ids)):
             raise ValueError("duplicate problem ids in request")
         return self
+
+
+class QuizPublish(BaseModel):
+    version: int = Field(ge=0)
 
 
 class QuizRead(BaseModel):
@@ -154,6 +154,20 @@ class QuizRead(BaseModel):
     is_public: bool
     problems: list[QuizProblemRead]
     version: int
+    created_at: datetime
+    updated_at: datetime
+    published_at: Optional[datetime] = None
+
+
+class QuizPublicRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    title: str
+    description: Optional[str] = None
+    is_published: bool
+    is_public: bool
+    problems: list[QuizProblemRead]
     created_at: datetime
     updated_at: datetime
     published_at: Optional[datetime] = None

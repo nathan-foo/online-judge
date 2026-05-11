@@ -8,7 +8,7 @@ from sqlalchemy.orm import load_only, selectinload
 from sqlalchemy.orm.exc import StaleDataError
 from sqlalchemy.sql import func
 from .models import Quiz, QuizProblem
-from .schemas import QuizCreate, QuizProblemCreate, QuizProblemUpsert, QuizPublish, QuizRead, QuizUpdate
+from .schemas import QuizCreate, QuizProblemCreate, QuizProblemUpsert, QuizPublicRead, QuizPublish, QuizRead, QuizUpdate
 
 
 def _build_problem(p: QuizProblemCreate | QuizProblemUpsert) -> QuizProblem:
@@ -127,7 +127,7 @@ async def get_quiz(
     session: AsyncSession,
     viewer_id: str,
     quiz_id: uuid.UUID
-) -> Quiz | QuizRead:
+) -> Quiz | QuizPublicRead:
     result = await session.execute(
         select(Quiz)
         .where(Quiz.id == quiz_id, Quiz.is_deleted == False)
@@ -140,7 +140,7 @@ async def get_quiz(
             detail="Quiz not found",
         )
     if quiz.owner_id != viewer_id:
-        return QuizRead.model_validate(quiz.published_snapshot)
+        return QuizPublicRead.model_validate(quiz.published_snapshot)
     return quiz
 
 
