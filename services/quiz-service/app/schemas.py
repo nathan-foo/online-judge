@@ -126,7 +126,11 @@ class QuizUpdate(BaseModel):
     description: Optional[str] = Field(default=None, max_length=2000)
     is_public: Optional[bool] = None
     problems: Optional[list[QuizProblemUpsert]] = None
-    version: Optional[int] = Field(default=None, ge=0)
+    version: int = Field(ge=0)
+
+
+class QuizPublish(BaseModel):
+    version: int = Field(ge=0)
 
     @model_validator(mode="after")
     def _validate(self):
@@ -149,6 +153,7 @@ class QuizRead(BaseModel):
     is_published: bool
     is_public: bool
     problems: list[QuizProblemRead]
+    version: int
     created_at: datetime
     updated_at: datetime
     published_at: Optional[datetime] = None
@@ -164,6 +169,7 @@ class QuizSummary(BaseModel):
     is_published: bool
     is_public: bool
     problem_count: int
+    version: int
     created_at: datetime
     updated_at: datetime
     published_at: Optional[datetime] = None

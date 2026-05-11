@@ -8,7 +8,7 @@ from sqlalchemy.orm import load_only, selectinload
 from sqlalchemy.orm.exc import StaleDataError
 from sqlalchemy.sql import func
 from .models import Quiz, QuizProblem
-from .schemas import QuizCreate, QuizProblemCreate, QuizProblemUpsert, QuizRead, QuizUpdate
+from .schemas import QuizCreate, QuizProblemCreate, QuizProblemUpsert, QuizPublish, QuizRead, QuizUpdate
 
 
 def _build_problem(p: QuizProblemCreate | QuizProblemUpsert) -> QuizProblem:
@@ -168,7 +168,7 @@ async def update_quiz(
     quiz: Quiz,
     quiz_in: QuizUpdate
 ) -> Quiz:
-    if quiz_in.version is not None and quiz_in.version != quiz.version:
+    if quiz_in.version != quiz.version:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Quiz was modified by another request",
@@ -211,7 +211,13 @@ async def delete_quiz(
 async def publish_quiz(
     session: AsyncSession,
     quiz: Quiz,
+    publish_in: QuizPublish,
 ) -> Quiz:
+    if publish_in.version != quiz.version:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Quiz was modified by another request",
+        )
     quiz.is_published = True
     quiz.published_at = datetime.now(timezone.utc)
     quiz.published_snapshot = QuizRead.model_validate(quiz).model_dump(mode="json")

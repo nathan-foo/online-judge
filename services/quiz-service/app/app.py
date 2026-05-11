@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Query, status
 from .database import engine, Base
 from .dependencies import AsyncSessionDep, CurrentUserIdDep
-from .schemas import QuizCreate, QuizPublicSummary, QuizRead, QuizSummary, QuizUpdate
+from .schemas import QuizCreate, QuizPublicSummary, QuizPublish, QuizRead, QuizSummary, QuizUpdate
 from . import models, quiz_service  # noqa: F401 — registers Quiz on Base.metadata
 
 
@@ -78,8 +78,9 @@ async def delete_quiz(
 @app.post("/{quiz_id}/publish", response_model=QuizRead)
 async def publish_quiz(
     quiz_id: uuid.UUID,
+    publish_in: QuizPublish,
     user_id: CurrentUserIdDep,
     session: AsyncSessionDep
 ):
     quiz = await quiz_service.get_owned_quiz(session, user_id, quiz_id)
-    return await quiz_service.publish_quiz(session, quiz)
+    return await quiz_service.publish_quiz(session, quiz, publish_in)
