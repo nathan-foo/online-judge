@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Query, status
 from .database import engine, Base
 from .dependencies import AsyncSessionDep, CurrentUserIdDep
-from .schemas import QuizCreate, QuizPublicRead, QuizPublicSummary, QuizPublish, QuizRead, QuizSummary, QuizUpdate
+from .schemas import QuizCreate, QuizPublicRead, QuizPublish, QuizRead, QuizSummary, QuizUpdate
 from . import models, quiz_service  # noqa: F401 — registers Quiz on Base.metadata
 
 
@@ -36,7 +36,7 @@ async def list_quizzes(
     return await quiz_service.list_quizzes(session, user_id, limit, offset)
 
 
-@app.get("/public", response_model=list[QuizPublicSummary])
+@app.get("/public", response_model=list[QuizSummary])
 async def list_public_quizzes(
     session: AsyncSessionDep,
     limit: int = Query(default=20, ge=1, le=100),

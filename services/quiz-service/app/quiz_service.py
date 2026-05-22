@@ -52,6 +52,20 @@ def _apply_problem_diff(quiz: Quiz, desired: list[QuizProblemUpsert]) -> None:
     quiz.problem_count = len(desired)
 
 
+_QUIZ_SUMMARY_LOAD = load_only(
+    Quiz.id,
+    Quiz.title,
+    Quiz.description,
+    Quiz.is_published,
+    Quiz.is_public,
+    Quiz.problem_count,
+    Quiz.version,
+    Quiz.created_at,
+    Quiz.updated_at,
+    Quiz.published_at,
+)
+
+
 async def create_quiz(
     session: AsyncSession,
     owner_id: str,
@@ -74,20 +88,6 @@ async def create_quiz(
             detail="Duplicate position in quiz",
         )
     return await get_owned_quiz(session, owner_id, quiz.id)
-
-
-_QUIZ_SUMMARY_LOAD = load_only(
-    Quiz.id,
-    Quiz.owner_id,
-    Quiz.title,
-    Quiz.description,
-    Quiz.is_published,
-    Quiz.is_public,
-    Quiz.problem_count,
-    Quiz.created_at,
-    Quiz.updated_at,
-    Quiz.published_at,
-)
 
 
 async def list_quizzes(
@@ -217,6 +217,11 @@ async def publish_quiz(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Quiz was modified by another request",
+        )
+    if quiz.problem_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot publish an empty quiz",
         )
     quiz.is_published = True
     quiz.published_at = datetime.now(timezone.utc)

@@ -40,7 +40,7 @@ class Quiz(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     problem_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -81,7 +81,7 @@ class QuizProblem(Base):
     payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
 
     position: Mapped[int] = mapped_column(Integer, nullable=False)
-    points: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    points: Mapped[int] = mapped_column(Integer, nullable=False, default=1000)
 
     quiz: Mapped[Quiz] = relationship(back_populates="problems")
 
