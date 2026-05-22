@@ -1,5 +1,3 @@
-# TODO: Fix environment variable loading for tests.
-
 from fastapi.testclient import TestClient
 
 from app import app

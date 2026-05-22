@@ -14,8 +14,7 @@ services:
       - "8080:8080"
     environment:
       USER_SERVICE_URL: "http://user-service:8000"
-      # TEST_SERVICE_URL: "http://test-service:8000"
-      # TEST_SERVICE_URL_2: "http://test-service-2:8000"
+      QUIZ_SERVICE_URL: "http://quiz-service:8000"
       ALLOWED_ORIGINS: "http://localhost:3000"
       REDIS_URL: "redis://redis:6379/0"
       RATE_LIMIT_GLOBAL: "100"
@@ -24,10 +23,8 @@ services:
     depends_on:
       user-service:
         condition: service_started
-      # test-service:
-      #   condition: service_started
-      # test-service-2:
-      #   condition: service_started
+      quiz-service:
+        condition: service_started
       redis:
         condition: service_healthy
     restart: unless-stopped
@@ -56,28 +53,22 @@ services:
       nofile:
         soft: 65536
         hard: 65536
-  # test-service:
-  #   build: ./services/test-service
-  #   expose:
-  #     - "8000"
-  #   restart: unless-stopped
-  #   sysctls:
-  #     - net.core.somaxconn=4096
-  #   ulimits:
-  #     nofile:
-  #       soft: 65536
-  #       hard: 65536
-  # test-service-2:
-  #   build: ./services/test-service-2
-  #   expose:
-  #     - "8000"
-  #   restart: unless-stopped
-  #   sysctls:
-  #     - net.core.somaxconn=4096
-  #   ulimits:
-  #     nofile:
-  #       soft: 65536
-  #       hard: 65536
+  quiz-service:
+    build: ./services/quiz-service
+    expose:
+      - "8000"
+    secrets:
+      - postgres_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    sysctls:
+      - net.core.somaxconn=4096
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
   postgres:
     image: postgres:16-alpine
     expose:
@@ -85,11 +76,11 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
-      POSTGRES_DB: users
     secrets:
       - postgres_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
