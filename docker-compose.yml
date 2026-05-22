@@ -99,6 +99,20 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+  rabbitmq:
+    image: rabbitmq:4-management
+    expose:
+      - "5672"
+    ports:
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
 secrets:
   clerk_secret_key:
     file: ./secrets/clerk_secret_key.txt
@@ -109,3 +123,4 @@ secrets:
 volumes:
   redis_data:
   postgres_data:
+  rabbitmq_data:
