@@ -1,2 +1,3 @@
 CREATE DATABASE users;
 CREATE DATABASE quizzes;
+CREATE DATABASE attempts;
