@@ -1,23 +1,17 @@
-FROM golang:1.26.1 AS builder
+FROM python:3.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
-RUN go mod download
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY cmd/ ./cmd/
-COPY internal/ ./internal/
+RUN groupadd -r app && useradd -r -g app app
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o attempt-service ./cmd/attempt-service
+COPY app/ ./app/
 
-FROM gcr.io/distroless/static-debian12:nonroot
+USER app
 
-WORKDIR /app
-
-COPY --from=builder /app/attempt-service ./attempt-service
-
-EXPOSE 8000
-
-USER nonroot:nonroot
-
-CMD ["./attempt-service"]
+CMD ["uvicorn", "app.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
