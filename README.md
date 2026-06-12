@@ -9,32 +9,37 @@ This project is a work in progress.
 ```
 .
 ├── client
-│   ├── app
-│   │   ├── explore
-│   │   ├── pricing
-│   │   ├── problems
-│   │   ├── sign-in
-│   │   │   └── [[...sign-in]]
-│   │   └── sign-up
-│   │       └── [[...sign-up]]
-│   ├── components
-│   │   └── ui
-│   ├── lib
-│   └── public
+│   ├── app
+│   │   ├── explore
+│   │   ├── pricing
+│   │   ├── problems
+│   │   ├── sign-in
+│   │   └── sign-up
+│   ├── components
+│   │   └── ui
+│   ├── lib
+│   └── public
 ├── gateway
-│   ├── cmd
-│   │   └── api-gateway
-│   └── internal
-│       ├── auth
-│       ├── config
-│       ├── health
-│       ├── logger
-│       ├── proxy
-│       ├── ratelimit
-│       ├── redis
-│       └── router
+│   ├── cmd
+│   │   └── api-gateway
+│   └── internal
+│       ├── auth
+│       ├── config
+│       ├── health
+│       ├── logger
+│       ├── proxy
+│       ├── ratelimit
+│       ├── redis
+│       └── router
+├── scripts
 └── services
-    └── test-service
+    ├── attempt-service
+    │   ├── app
+    │   └── tests
+    ├── quiz-service
+    │   ├── app
+    │   └── tests
+    └── user-service
         ├── app
         └── tests
 ```

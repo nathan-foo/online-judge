@@ -76,10 +76,15 @@ services:
     build: ./services/attempt-service
     expose:
       - "8000"
+    environment:
+      QUIZ_SERVICE_URL: "http://quiz-service:8000"
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
     secrets:
       - postgres_password
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     restart: unless-stopped
     stop_grace_period: 30s
