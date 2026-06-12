@@ -25,7 +25,7 @@ var Routes = []RouteConfig{
 	{
 		Prefix:        "/attempts",
 		ServiceUrl:    getConfig("ATTEMPT_SERVICE_URL"),
-		RequireAuth:   false,
+		RequireAuth:   true,
 		RateLimit:     10,
 		MaxUploadSize: MaxUploadSize,
 	},

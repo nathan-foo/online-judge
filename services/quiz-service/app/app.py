@@ -45,6 +45,15 @@ async def list_public_quizzes(
     return await quiz_service.list_public_quizzes(session, limit, offset)
 
 
+@app.get("/internal/{quiz_id}/snapshot", response_model=QuizRead)
+async def get_quiz_snapshot(
+    quiz_id: uuid.UUID,
+    user_id: CurrentUserIdDep,
+    session: AsyncSessionDep
+):
+    return await quiz_service.get_quiz_snapshot(session, user_id, quiz_id)
+
+
 @app.get("/{quiz_id}", response_model=QuizRead | QuizPublicRead)
 async def get_quiz(
     quiz_id: uuid.UUID,

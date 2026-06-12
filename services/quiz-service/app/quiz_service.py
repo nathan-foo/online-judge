@@ -144,6 +144,29 @@ async def get_quiz(
     return quiz
 
 
+async def get_quiz_snapshot(
+    session: AsyncSession,
+    viewer_id: str,
+    quiz_id: uuid.UUID
+) -> dict:
+    result = await session.execute(
+        select(Quiz)
+        .where(Quiz.id == quiz_id, Quiz.is_deleted == False)
+        .options(load_only(Quiz.id, Quiz.owner_id, Quiz.is_public, Quiz.is_published, Quiz.published_snapshot))
+    )
+    quiz = result.scalar_one_or_none()
+    if (
+        not quiz
+        or not quiz.is_published
+        or (quiz.owner_id != viewer_id and not quiz.is_public)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quiz not found",
+        )
+    return quiz.published_snapshot
+
+
 async def get_owned_quiz(
     session: AsyncSession,
     owner_id: str,

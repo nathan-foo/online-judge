@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/nathan-foo/online-judge/gateway/internal/auth"
 	"github.com/nathan-foo/online-judge/gateway/internal/config"
@@ -32,6 +33,7 @@ func NewMux(allowedOrigins []string, routes []config.RouteConfig,
 
 	r.Group(func(r chi.Router) {
 		r.Use(securityHeaders)
+		r.Use(blockInternalRoutes)
 		r.Use(cors.Handler(cors.Options{
 			AllowedOrigins:   allowedOrigins,
 			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
@@ -71,6 +73,16 @@ func uploadHandler(maxBytes int64) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func blockInternalRoutes(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/internal/") || strings.HasSuffix(r.URL.Path, "/internal") {
+			http.NotFound(w, r)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func securityHeaders(next http.Handler) http.Handler {
