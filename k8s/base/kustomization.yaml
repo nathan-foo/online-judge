@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: online-judge
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - postgres
+  - redis
+  - rabbitmq
+  - gateway
+  - user-service
+  - quiz-service
+  - attempt-service
+  - client
+
+configMapGenerator:
+  - name: postgres-init
+    files:
+      - ../../scripts/init-db.sql
