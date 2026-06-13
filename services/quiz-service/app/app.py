@@ -1,6 +1,7 @@
 import uuid
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Query, status
+from fastapi import FastAPI, HTTPException, Query, status
+from sqlalchemy import text
 from .database import engine, Base
 from .dependencies import AsyncSessionDep, CurrentUserIdDep
 from .schemas import QuizCreate, QuizPublicRead, QuizPublish, QuizRead, QuizSummary, QuizUpdate
@@ -15,6 +16,23 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+@app.get("/healthz", include_in_schema=False)
+async def healthz():
+    return {"status": "ok"}
+
+
+@app.get("/readyz", include_in_schema=False)
+async def readyz():
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="database unavailable"
+        )
+    return {"status": "ready"}
 
 
 @app.post("/", response_model=QuizRead, status_code=status.HTTP_201_CREATED)
