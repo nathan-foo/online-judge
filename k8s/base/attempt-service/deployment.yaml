@@ -12,6 +12,7 @@ spec:
       labels:
         app: attempt-service
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: attempt-service
           image: online-judge/attempt-service
@@ -30,12 +31,14 @@ spec:
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 5
           livenessProbe:
             httpGet:
               path: /healthz
               port: 8000
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 5
           resources:
             requests:
               cpu: 50m

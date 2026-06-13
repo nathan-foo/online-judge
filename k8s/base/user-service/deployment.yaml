@@ -12,11 +12,15 @@ spec:
       labels:
         app: user-service
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: user-service
           image: online-judge/user-service
           ports:
             - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: app-config
           volumeMounts:
             - name: secrets
               mountPath: /run/secrets
@@ -27,12 +31,14 @@ spec:
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 5
           livenessProbe:
             httpGet:
               path: /healthz
               port: 8000
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 5
           resources:
             requests:
               cpu: 50m

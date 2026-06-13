@@ -5,7 +5,6 @@ namespace: online-judge
 
 resources:
   - ../../base
-  - ingress.yaml
 
 images:
   - name: online-judge/gateway
@@ -29,6 +28,9 @@ secretGenerator:
       - clerk_secret_key=../../../secrets/clerk_secret_key.txt
       - clerk_webhook_secret=../../../secrets/clerk_webhook_secret.txt
       - rabbitmq_password=../../../secrets/rabbitmq_password.txt
+  - name: rabbitmq-config
+    files:
+      - rabbitmq.conf=../../../secrets/rabbitmq.conf
   - name: client-env
     envs:
       - ../../../client/.env.local

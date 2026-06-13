@@ -13,20 +13,17 @@ spec:
       labels:
         app: rabbitmq
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: rabbitmq
           image: rabbitmq:4-management
           ports:
             - containerPort: 5672
             - containerPort: 15672
-          env:
-            - name: RABBITMQ_DEFAULT_USER
-              value: online_judge
-            - name: RABBITMQ_DEFAULT_PASS_FILE
-              value: /run/secrets/rabbitmq_password
           volumeMounts:
-            - name: secrets
-              mountPath: /run/secrets
+            - name: config
+              mountPath: /etc/rabbitmq/rabbitmq.conf
+              subPath: rabbitmq.conf
               readOnly: true
             - name: data
               mountPath: /var/lib/rabbitmq
@@ -35,18 +32,17 @@ spec:
               command: ["rabbitmq-diagnostics", "check_port_connectivity"]
             initialDelaySeconds: 20
             periodSeconds: 10
+            timeoutSeconds: 10
           livenessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "ping"]
             initialDelaySeconds: 40
             periodSeconds: 15
+            timeoutSeconds: 10
       volumes:
-        - name: secrets
+        - name: config
           secret:
-            secretName: app-secrets
-            items:
-              - key: rabbitmq_password
-                path: rabbitmq_password
+            secretName: rabbitmq-config
   volumeClaimTemplates:
     - metadata:
         name: data

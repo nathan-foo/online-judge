@@ -130,13 +130,9 @@ services:
       - "5672"
     ports:
       - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: "online_judge"
-      RABBITMQ_DEFAULT_PASS_FILE: /run/secrets/rabbitmq_password
-    secrets:
-      - rabbitmq_password
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+      - ./secrets/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]

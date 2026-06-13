@@ -12,6 +12,7 @@ spec:
       labels:
         app: gateway
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: gateway
           image: online-judge/gateway
