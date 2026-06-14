@@ -1,6 +1,7 @@
 import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request, status
+from sqlalchemy import text
 from svix.webhooks import Webhook, WebhookVerificationError
 from .database import engine, Base
 from .dependencies import AsyncSessionDep, CurrentUserDep
@@ -22,6 +23,23 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+@app.get("/healthz", include_in_schema=False)
+async def healthz():
+    return {"status": "ok"}
+
+
+@app.get("/readyz", include_in_schema=False)
+async def readyz():
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="database unavailable"
+        )
+    return {"status": "ready"}
 
 
 @app.post("/sync", status_code=status.HTTP_204_NO_CONTENT)

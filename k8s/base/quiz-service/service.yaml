@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: quiz-service
+  labels:
+    app: quiz-service
+spec:
+  selector:
+    app: quiz-service
+  ports:
+    - port: 8000
+      targetPort: 8000

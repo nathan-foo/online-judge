@@ -3,7 +3,13 @@ import os
 from typing import Awaitable, Callable, Optional
 import aio_pika
 
-RABBITMQ_URL = os.environ.get("RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672/")
+try:
+    with open("/run/secrets/rabbitmq_password") as f:
+        rabbitmq_password = f.read().strip()
+except FileNotFoundError:
+    rabbitmq_password = os.environ.get("RABBITMQ_PASSWORD", "guest")
+
+RABBITMQ_URL = f"amqp://online_judge:{rabbitmq_password}@rabbitmq:5672/"
 
 CODE_EVAL_EXCHANGE = "code_eval"
 EVAL_REQUESTS_QUEUE = "code_eval.requests"

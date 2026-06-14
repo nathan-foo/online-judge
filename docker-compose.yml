@@ -78,9 +78,9 @@ services:
       - "8000"
     environment:
       QUIZ_SERVICE_URL: "http://quiz-service:8000"
-      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
     secrets:
       - postgres_password
+      - rabbitmq_password
     depends_on:
       postgres:
         condition: service_healthy
@@ -132,6 +132,7 @@ services:
       - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+      - ./secrets/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
@@ -145,6 +146,8 @@ secrets:
     file: ./secrets/clerk_webhook_secret.txt
   postgres_password:
     file: ./secrets/postgres_password.txt
+  rabbitmq_password:
+    file: ./secrets/rabbitmq_password.txt
 volumes:
   redis_data:
   postgres_data:
