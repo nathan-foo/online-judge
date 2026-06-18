@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"github.com/nathan-foo/online-judge/services/code-eval-service/internal/broker"
 	"github.com/nathan-foo/online-judge/services/code-eval-service/internal/config"
 	"github.com/nathan-foo/online-judge/services/code-eval-service/internal/health"
+	"github.com/nathan-foo/online-judge/services/code-eval-service/internal/judge"
 	"github.com/nathan-foo/online-judge/services/code-eval-service/internal/logger"
 	"github.com/nathan-foo/online-judge/services/code-eval-service/internal/router"
 )
@@ -32,12 +34,29 @@ func main() {
 	}
 
 	handler := func(body []byte) error {
-		result := []byte{}
+		var req judge.EvalRequest
 
-		// TODO
+		if err := json.Unmarshal(body, &req); err != nil {
+			log.Error().Err(err).Msg("failed to decode eval request")
+			return err
+		}
 
-		return b.PublishResult(context.Background(), result)
+		result := judge.Run(req)
+		payload, err := json.Marshal(result)
+
+		if err != nil {
+			log.Error().Err(err).Str("attempt_id", req.AttemptID).Msg("failed to encode eval result")
+			return err
+		}
+
+		if err := b.PublishResult(context.Background(), payload); err != nil {
+			log.Error().Err(err).Str("attempt_id", req.AttemptID).Msg("failed to publish eval result")
+			return err
+		}
+
+		return nil
 	}
+
 	if err := b.ConsumeRequests(handler); err != nil {
 		log.Fatal().Err(err).Msg("failed to start consumer")
 	}

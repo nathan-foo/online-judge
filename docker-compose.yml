@@ -94,6 +94,17 @@ services:
       nofile:
         soft: 65536
         hard: 65536
+  code-eval-service:
+    build: ./services/code-eval-service
+    expose:
+      - "8000"
+    secrets:
+      - rabbitmq_password
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 30s
   postgres:
     image: postgres:16-alpine
     expose:
