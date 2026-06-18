@@ -1,8 +1,31 @@
 package judge
 
+import (
+	"os"
+	"path/filepath"
+)
+
 // Exec Agent
 func RunTests(req EvalRequest) (results []TestResult, compileErr string, err error) {
-	return
+	dir, err := os.MkdirTemp("", "eval-*")
+
+	if err != nil {
+		return nil, "", err
+	}
+
+	defer os.RemoveAll(dir)
+
+	if err := os.WriteFile(filepath.Join(dir, "main.py"), []byte(req.SourceCode), 0o644); err != nil {
+		return nil, "", err
+	}
+
+	results = make([]TestResult, 0, len(req.TestCases))
+
+	for _, tc := range req.TestCases {
+		results = append(results, runPythonCase(dir, tc, req.TimeLimitMS))
+	}
+
+	return results, "", nil
 }
 
 // Eval Service
