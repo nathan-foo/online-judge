@@ -41,8 +41,15 @@ define k8s_deploy
 		docker build -t online-judge/user-service:dev ./services/user-service && \
 		docker build -t online-judge/quiz-service:dev ./services/quiz-service && \
 		docker build -t online-judge/attempt-service:dev ./services/attempt-service && \
+		docker build -t online-judge/code-eval-service:dev ./services/code-eval-service && \
 		docker build -t online-judge/client:dev \
 			--build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$(NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) ./client
+	eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-python:dev -f services/code-eval-service/build/python.Dockerfile services/code-eval-service
+	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-c:dev -f services/code-eval-service/build/c.Dockerfile services/code-eval-service
+	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-cpp:dev -f services/code-eval-service/build/cpp.Dockerfile services/code-eval-service
+	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-java:dev -f services/code-eval-service/build/java.Dockerfile services/code-eval-service
+	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-javascript:dev -f services/code-eval-service/build/javascript.Dockerfile services/code-eval-service
+	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-go:dev -f services/code-eval-service/build/go.Dockerfile services/code-eval-service
 	kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/local | kubectl apply -f -
 	kubectl rollout status statefulset/postgres -n online-judge --timeout=120s
 	kubectl rollout status statefulset/rabbitmq -n online-judge --timeout=120s
@@ -50,6 +57,7 @@ define k8s_deploy
 	kubectl rollout status deployment/user-service -n online-judge --timeout=120s
 	kubectl rollout status deployment/quiz-service -n online-judge --timeout=120s
 	kubectl rollout status deployment/attempt-service -n online-judge --timeout=120s
+	kubectl rollout status deployment/code-eval-service -n online-judge --timeout=120s
 	kubectl rollout status deployment/gateway -n online-judge --timeout=120s
 	kubectl rollout status deployment/client -n online-judge --timeout=120s
 endef

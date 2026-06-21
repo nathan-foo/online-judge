@@ -9,18 +9,20 @@ import { Button } from "@/components/ui/button";
 // when the gateway is not on localhost:8080.
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
-const LANGUAGES = ["python", "javascript", "cpp", "java"] as const;
+const LANGUAGES = ["python", "c", "cpp", "java", "javascript", "go"] as const;
 type Lang = (typeof LANGUAGES)[number];
 
-// Realistic "double the number" solutions. They won't actually run while
-// RunTests is a stub, but they exercise the full request shape.
+// Realistic "double the number" solutions. The code-eval-service runs these for
+// real in a sandboxed exec pod, so a correct solution grades as fully passing.
 const STARTER: Record<Lang, string> = {
   python: "n = int(input())\nprint(n * 2)\n",
-  javascript:
-    "const n = parseInt(require('fs').readFileSync(0, 'utf8'));\nconsole.log(n * 2);\n",
+  c: '#include <stdio.h>\nint main() { int n; scanf("%d", &n); printf("%d", n * 2); }\n',
   cpp: "#include <iostream>\nint main() { int n; std::cin >> n; std::cout << n * 2; }\n",
   java:
     "import java.util.*;\npublic class Main {\n  public static void main(String[] a) {\n    System.out.print(new Scanner(System.in).nextInt() * 2);\n  }\n}\n",
+  javascript:
+    "const n = parseInt(require('fs').readFileSync(0, 'utf8'));\nconsole.log(n * 2);\n",
+  go: 'package main\nimport "fmt"\nfunc main() { var n int; fmt.Scan(&n); fmt.Print(n * 2) }\n',
 };
 
 type LogLevel = "info" | "request" | "response" | "success" | "warn" | "error";
