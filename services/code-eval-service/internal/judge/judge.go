@@ -1,12 +1,17 @@
 package judge
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 )
 
-// Exec Agent
 func RunTests(req EvalRequest) (results []TestResult, compileErr string, err error) {
+	spec, ok := langSpecs[req.Language]
+	if !ok {
+		return nil, "", fmt.Errorf("unsupported language: %s", req.Language)
+	}
+
 	dir, err := os.MkdirTemp("", "eval-*")
 
 	if err != nil {
@@ -15,20 +20,29 @@ func RunTests(req EvalRequest) (results []TestResult, compileErr string, err err
 
 	defer os.RemoveAll(dir)
 
-	if err := os.WriteFile(filepath.Join(dir, "main.py"), []byte(req.SourceCode), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, spec.filename), []byte(req.SourceCode), 0o644); err != nil {
 		return nil, "", err
+	}
+
+	if len(spec.compile) > 0 {
+		cerr, err := compile(dir, spec)
+		if err != nil {
+			return nil, "", err
+		}
+		if cerr != "" {
+			return nil, cerr, nil
+		}
 	}
 
 	results = make([]TestResult, 0, len(req.TestCases))
 
 	for _, tc := range req.TestCases {
-		results = append(results, runPythonCase(dir, tc, req.TimeLimitMS))
+		results = append(results, runCase(dir, spec, tc, req.TimeLimitMS, req.MemoryLimitMB))
 	}
 
 	return results, "", nil
 }
 
-// Eval Service
 func Aggregate(req EvalRequest, results []TestResult, compileErr string, err error) EvalResult {
 	out := EvalResult{
 		AttemptID:    req.AttemptID,

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 // when the gateway is not on localhost:8080.
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
-const LANGUAGES = ["python", "c", "cpp", "java", "javascript", "go"] as const;
+const LANGUAGES = ["python", "c", "cpp", "java", "javascript", "go", "typescript", "kotlin", "rust", "csharp"] as const;
 type Lang = (typeof LANGUAGES)[number];
 
 // Realistic "double the number" solutions. The code-eval-service runs these for
@@ -23,6 +23,12 @@ const STARTER: Record<Lang, string> = {
   javascript:
     "const n = parseInt(require('fs').readFileSync(0, 'utf8'));\nconsole.log(n * 2);\n",
   go: 'package main\nimport "fmt"\nfunc main() { var n int; fmt.Scan(&n); fmt.Print(n * 2) }\n',
+  typescript:
+    "const n = parseInt(require('fs').readFileSync(0, 'utf8'));\nconsole.log(n * 2);\n",
+  kotlin: "fun main() { print(readLine()!!.trim().toInt() * 2) }\n",
+  rust: "use std::io::*;\nfn main() {\n  let mut s = String::new();\n  stdin().read_line(&mut s).unwrap();\n  print!(\"{}\", s.trim().parse::<i64>().unwrap() * 2);\n}\n",
+  csharp:
+    "using System;\nclass Program {\n  static void Main() {\n    Console.Write(int.Parse(Console.ReadLine()) * 2);\n  }\n}\n",
 };
 
 type LogLevel = "info" | "request" | "response" | "success" | "warn" | "error";

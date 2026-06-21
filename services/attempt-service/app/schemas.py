@@ -13,6 +13,10 @@ class Language(str, enum.Enum):
     JAVA = "java"
     JAVASCRIPT = "javascript"
     GO = "go"
+    TYPESCRIPT = "typescript"
+    KOTLIN = "kotlin"
+    RUST = "rust"
+    CSHARP = "csharp"
 
 
 class MultipleChoiceAnswer(BaseModel):

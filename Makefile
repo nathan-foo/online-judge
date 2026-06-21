@@ -50,6 +50,10 @@ define k8s_deploy
 	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-java:dev -f services/code-eval-service/build/java.Dockerfile services/code-eval-service
 	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-javascript:dev -f services/code-eval-service/build/javascript.Dockerfile services/code-eval-service
 	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-go:dev -f services/code-eval-service/build/go.Dockerfile services/code-eval-service
+	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-typescript:dev -f services/code-eval-service/build/typescript.Dockerfile services/code-eval-service
+	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-kotlin:dev -f services/code-eval-service/build/kotlin.Dockerfile services/code-eval-service
+	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-rust:dev -f services/code-eval-service/build/rust.Dockerfile services/code-eval-service
+	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-csharp:dev -f services/code-eval-service/build/csharp.Dockerfile services/code-eval-service
 	kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/local | kubectl apply -f -
 	kubectl rollout status statefulset/postgres -n online-judge --timeout=120s
 	kubectl rollout status statefulset/rabbitmq -n online-judge --timeout=120s

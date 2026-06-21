@@ -4,9 +4,15 @@ type Language string
 
 const (
 	LanguagePython     Language = "python"
-	LanguageJava       Language = "java"
+	LanguageC          Language = "c"
 	LanguageCPP        Language = "cpp"
+	LanguageJava       Language = "java"
 	LanguageJavaScript Language = "javascript"
+	LanguageGo         Language = "go"
+	LanguageTypeScript Language = "typescript"
+	LanguageKotlin     Language = "kotlin"
+	LanguageRust       Language = "rust"
+	LanguageCSharp     Language = "csharp"
 )
 
 type TestCase struct {
@@ -59,4 +65,9 @@ type EvalResult struct {
 	PointsAwarded int          `json:"points_awarded"`
 	CompileError  string       `json:"compile_error,omitempty"`
 	Results       []TestResult `json:"results,omitempty"`
+}
+
+type ExecResponse struct {
+	Results      []TestResult `json:"results"`
+	CompileError string       `json:"compile_error,omitempty"`
 }
