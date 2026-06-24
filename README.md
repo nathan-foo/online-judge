@@ -102,7 +102,7 @@ The evaluation service executes untrusted user code on network-isolated, single-
 The following benchmark was measured against a local Docker setup using [hey](https://github.com/rakyll/hey) and tests the overhead latency of the custom API gateway.
 
 ```
-hey -z 30s -c 100 http://localhost:8080/
+hey -z 30s -c 100 http://localhost:8080/bench
 ```
 
 ### Direct Path
