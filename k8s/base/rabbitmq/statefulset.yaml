@@ -16,10 +16,9 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: rabbitmq
-          image: rabbitmq:4-management
+          image: rabbitmq:4
           ports:
             - containerPort: 5672
-            - containerPort: 15672
           volumeMounts:
             - name: config
               mountPath: /etc/rabbitmq/rabbitmq.conf

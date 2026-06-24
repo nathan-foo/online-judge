@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: online-judge
+
+resources:
+  - ../../base
+  - runtimeclass.yaml
+
+images:
+  - name: online-judge/gateway
+    newTag: prod
+  - name: online-judge/client
+    newTag: prod
+  - name: online-judge/user-service
+    newTag: prod
+  - name: online-judge/quiz-service
+    newTag: prod
+  - name: online-judge/attempt-service
+    newTag: prod
+  - name: online-judge/code-eval-service
+    newTag: prod
+
+patches:
+  - path: code-eval-service-patch.yaml

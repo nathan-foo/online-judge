@@ -3,6 +3,7 @@ kind: ConfigMap
 metadata:
   name: app-config
 data:
+  ENVIRONMENT: "prod"
   USER_SERVICE_URL: "http://user-service:8000"
   QUIZ_SERVICE_URL: "http://quiz-service:8000"
   ATTEMPT_SERVICE_URL: "http://attempt-service:8000"

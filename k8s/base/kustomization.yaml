@@ -13,6 +13,7 @@ resources:
   - user-service
   - quiz-service
   - attempt-service
+  - code-eval-service
   - client
 
 configMapGenerator:

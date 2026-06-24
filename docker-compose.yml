@@ -18,7 +18,7 @@ services:
       ATTEMPT_SERVICE_URL: "http://attempt-service:8000"
       ALLOWED_ORIGINS: "http://localhost:3000"
       REDIS_URL: "redis://redis:6379/0"
-      RATE_LIMIT_GLOBAL: "100"
+      RATE_LIMIT_GLOBAL: "120"
     secrets:
       - clerk_secret_key
     depends_on:
