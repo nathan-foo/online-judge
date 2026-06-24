@@ -14,7 +14,6 @@ This repository contains a production-grade code evaluation platform allowing us
 │   ├── lib
 │   └── public
 ├── gateway
-│   ├── bench
 │   ├── cmd
 │   │   └── api-gateway
 │   └── internal
