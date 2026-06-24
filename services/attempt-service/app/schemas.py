@@ -8,9 +8,15 @@ from .models import AttemptStatus, EvalStatus, ProblemType
 
 class Language(str, enum.Enum):
     PYTHON = "python"
-    JAVA = "java"
+    C = "c"
     CPP = "cpp"
+    JAVA = "java"
     JAVASCRIPT = "javascript"
+    GO = "go"
+    TYPESCRIPT = "typescript"
+    KOTLIN = "kotlin"
+    RUST = "rust"
+    CSHARP = "csharp"
 
 
 class MultipleChoiceAnswer(BaseModel):

@@ -13,9 +13,15 @@ class MCChoice(BaseModel):
 
 class Language(str, enum.Enum):
     PYTHON = "python"
-    JAVA = "java"
+    C = "c"
     CPP = "cpp"
+    JAVA = "java"
     JAVASCRIPT = "javascript"
+    GO = "go"
+    TYPESCRIPT = "typescript"
+    KOTLIN = "kotlin"
+    RUST = "rust"
+    CSHARP = "csharp"
 
 
 class TestCase(BaseModel):
@@ -60,7 +66,7 @@ class CodePayload(BaseModel):
     starter_code: dict[Language, str] = Field(default_factory=dict)
     test_cases: list[TestCase] = Field(min_length=1, max_length=50)
     time_limit_ms: int = Field(default=2000, ge=1000, le=10_000)
-    memory_limit_mb: int = Field(default=256, ge=16, le=1024)
+    memory_limit_mb: int = Field(default=256, ge=16, le=256)
     reference_solutions: dict[Language, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")

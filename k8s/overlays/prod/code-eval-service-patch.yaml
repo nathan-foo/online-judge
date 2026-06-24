@@ -1,0 +1,14 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: code-eval-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: code-eval-service
+          env:
+            - name: RUNTIME_CLASS_NAME
+              value: "gvisor"
+            - name: EXEC_AGENT_TAG
+              value: "prod"

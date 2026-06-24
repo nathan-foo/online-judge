@@ -17,6 +17,8 @@ images:
     newTag: dev
   - name: online-judge/attempt-service
     newTag: dev
+  - name: online-judge/code-eval-service
+    newTag: dev
 
 patches:
   - path: allowed-origins.yaml

@@ -18,7 +18,7 @@ services:
       ATTEMPT_SERVICE_URL: "http://attempt-service:8000"
       ALLOWED_ORIGINS: "http://localhost:3000"
       REDIS_URL: "redis://redis:6379/0"
-      RATE_LIMIT_GLOBAL: "100"
+      RATE_LIMIT_GLOBAL: "120"
     secrets:
       - clerk_secret_key
     depends_on:
@@ -125,11 +125,9 @@ services:
       timeout: 3s
       retries: 5
   rabbitmq:
-    image: rabbitmq:4-management
+    image: rabbitmq:4
     expose:
       - "5672"
-    ports:
-      - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
       - ./secrets/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
