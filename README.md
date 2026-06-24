@@ -67,9 +67,39 @@ This repository contains a production-grade code evaluation platform allowing us
         └── tests
 ```
 
+## Technology Stack
+
+| Service | Technologies |
+|---|---|
+| Client | React.js / Next.js / TypeScript |
+| API Gateway | Go, Redis |
+| Code Evaluation Service | Go / RabbitMQ |
+| User / Quiz / Attempt Service | Python / FastAPI / PostgreSQL / RabbitMQ |
+| Infrastructure | Docker, Kubernetes |
+
+## Methodology
+
+### Architecture
+
+The platform is built as a set of independent microservices communicating through HTTP and async messaging. All requests enter and are validated through a custom API Gateway, centralizing request logging, CORS, security headers, JWT authentication, global and route-specific rate limiting, and reverse proxying to appropriate services. This enforces access control and removes burden from the other microservices, allowing them to focus on domain logic.
+
+The services are as follows:
+
+- **User Service:** handles identity and account management
+- **Quiz Service:** handles problem/quiz/test case creation for reusable problems
+- **Attempt Service:** handles attempt submissions and grading
+- **Code Eval Service:** handles untrusted code execution
+
+
+### Code Submission and Execution
+
+On submission, the attempt service publishes a request to RabbitMQ. The code evaluation service consumes this request, runs the submission against test cases, and publishes a result, which is then applied idempotently once all code answers have been resolved.
+
+The evaluation service executes untrusted user code on network-isolated, single-use Kubernetes pods with strict memory/cpu limits, restricted user permissions, and a sandboxed gVisor runtime. To migitate the pod cold start latency, a per-language warm pool is used with concurrent refilling using goroutines.
+
 ## Benchmark Testing
 
-The following benchmark was measured against a local Docker setup using [hey](https://github.com/rakyll/hey) and tests the overhead latency of the custom API gateway. The gateway chain exercises request logging, global and route rate limiting via Redis, authentication, CORS, security headers, and reverse proxying among other tasks.
+The following benchmark was measured against a local Docker setup using [hey](https://github.com/rakyll/hey) and tests the overhead latency of the custom API gateway.
 
 ```
 hey -z 30s -c 100 http://localhost:8080/
