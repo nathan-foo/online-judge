@@ -75,7 +75,7 @@ This repository contains a production-grade code evaluation platform allowing us
 | API Gateway | Go, Redis |
 | Code Evaluation Service | Go / RabbitMQ |
 | User / Quiz / Attempt Service | Python / FastAPI / PostgreSQL / RabbitMQ |
-| Infrastructure | Docker, Kubernetes |
+| Infrastructure | Docker / Kubernetes |
 
 ## Methodology
 
