@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains a 
+This repository contains a production-grade code evaluation platform allowing users to run and submit code against test cases and receive a scored result.
 
 ## Repository Structure
 
