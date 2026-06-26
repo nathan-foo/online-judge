@@ -35,25 +35,31 @@ docker-ngrok: secrets/rabbitmq.conf
 	$(COMPOSE) up -d --build && ngrok http --url=$(BASE_URL) 8080
 
 define k8s_deploy
-	minikube start
-	eval $$(minikube docker-env) && \
-		docker build -t online-judge/gateway:dev ./gateway && \
-		docker build -t online-judge/user-service:dev ./services/user-service && \
-		docker build -t online-judge/quiz-service:dev ./services/quiz-service && \
-		docker build -t online-judge/attempt-service:dev ./services/attempt-service && \
-		docker build -t online-judge/code-eval-service:dev ./services/code-eval-service && \
-		docker build -t online-judge/client:dev \
-			--build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$(NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) ./client
-	eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-python:dev -f services/code-eval-service/build/python.Dockerfile services/code-eval-service
-	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-c:dev -f services/code-eval-service/build/c.Dockerfile services/code-eval-service
-	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-cpp:dev -f services/code-eval-service/build/cpp.Dockerfile services/code-eval-service
-	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-java:dev -f services/code-eval-service/build/java.Dockerfile services/code-eval-service
-	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-javascript:dev -f services/code-eval-service/build/javascript.Dockerfile services/code-eval-service
-	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-go:dev -f services/code-eval-service/build/go.Dockerfile services/code-eval-service
-	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-typescript:dev -f services/code-eval-service/build/typescript.Dockerfile services/code-eval-service
-	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-kotlin:dev -f services/code-eval-service/build/kotlin.Dockerfile services/code-eval-service
-	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-rust:dev -f services/code-eval-service/build/rust.Dockerfile services/code-eval-service
-	# eval $$(minikube docker-env) && docker build -t online-judge/exec-agent-csharp:dev -f services/code-eval-service/build/csharp.Dockerfile services/code-eval-service
+	minikube start --driver=vfkit --container-runtime=containerd --cni=calico
+	minikube addons enable gvisor
+	@echo "Waiting for gVisor (runsc) runtime to be installed on the node..."
+	@until kubectl get pod gvisor -n kube-system >/dev/null 2>&1; do sleep 2; done
+	kubectl wait --for=condition=Ready pod/gvisor -n kube-system --timeout=180s
+	docker build -t online-judge/gateway:dev ./gateway
+	docker build -t online-judge/user-service:dev ./services/user-service
+	docker build -t online-judge/quiz-service:dev ./services/quiz-service
+	docker build -t online-judge/attempt-service:dev ./services/attempt-service
+	docker build -t online-judge/code-eval-service:dev ./services/code-eval-service
+	docker build -t online-judge/client:dev \
+		--build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$(NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) ./client
+	docker build -t online-judge/exec-agent-python:dev -f services/code-eval-service/build/python.Dockerfile services/code-eval-service
+	# docker build -t online-judge/exec-agent-c:dev -f services/code-eval-service/build/c.Dockerfile services/code-eval-service
+	# docker build -t online-judge/exec-agent-cpp:dev -f services/code-eval-service/build/cpp.Dockerfile services/code-eval-service
+	# docker build -t online-judge/exec-agent-java:dev -f services/code-eval-service/build/java.Dockerfile services/code-eval-service
+	# docker build -t online-judge/exec-agent-javascript:dev -f services/code-eval-service/build/javascript.Dockerfile services/code-eval-service
+	# docker build -t online-judge/exec-agent-go:dev -f services/code-eval-service/build/go.Dockerfile services/code-eval-service
+	# docker build -t online-judge/exec-agent-typescript:dev -f services/code-eval-service/build/typescript.Dockerfile services/code-eval-service
+	# docker build -t online-judge/exec-agent-kotlin:dev -f services/code-eval-service/build/kotlin.Dockerfile services/code-eval-service
+	# docker build -t online-judge/exec-agent-rust:dev -f services/code-eval-service/build/rust.Dockerfile services/code-eval-service
+	# docker build -t online-judge/exec-agent-csharp:dev -f services/code-eval-service/build/csharp.Dockerfile services/code-eval-service
+	for img in gateway user-service quiz-service attempt-service code-eval-service client exec-agent-python; do \
+		minikube image load online-judge/$$img:dev; \
+	done
 	kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/local | kubectl apply -f -
 	kubectl rollout status statefulset/postgres -n online-judge --timeout=120s
 	kubectl rollout status statefulset/rabbitmq -n online-judge --timeout=120s

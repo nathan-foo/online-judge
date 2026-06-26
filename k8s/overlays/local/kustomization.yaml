@@ -5,6 +5,7 @@ namespace: online-judge
 
 resources:
   - ../../base
+  - runtimeclass.yaml
 
 images:
   - name: online-judge/gateway
@@ -22,6 +23,7 @@ images:
 
 patches:
   - path: allowed-origins.yaml
+  - path: gvisor-patch.yaml
 
 secretGenerator:
   - name: app-secrets
