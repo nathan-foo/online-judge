@@ -71,7 +71,7 @@ This repository contains a production-grade code evaluation platform allowing us
 | Service | Technologies |
 |---|---|
 | Client | React.js / Next.js / TypeScript |
-| API Gateway | Go, Redis |
+| API Gateway | Go / Redis |
 | Code Evaluation Service | Go / RabbitMQ |
 | User / Quiz / Attempt Service | Python / FastAPI / PostgreSQL / RabbitMQ |
 | Infrastructure | Docker / Kubernetes |
