@@ -14,13 +14,10 @@ const Navbar = () => {
                 </Link>
                 <div className="flex items-center justify-center">
                     <Button variant="link">
-                        <Link href="/explore">Explore</Link>
+                        <Link href="/dashboard">Dashboard</Link>
                     </Button>
                     <Button variant="link">
-                        <Link href="/problems">Problems</Link>
-                    </Button>
-                    <Button variant="link">
-                        <Link href="/pricing">Pricing</Link>
+                        <Link href="/create">Create</Link>
                     </Button>
                 </div>
                 <Show when="signed-out">

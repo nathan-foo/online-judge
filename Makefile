@@ -61,15 +61,15 @@ define k8s_deploy
 		minikube image load online-judge/$$img:dev; \
 	done
 	kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/local | kubectl apply -f -
-	kubectl rollout status statefulset/postgres -n online-judge --timeout=120s
-	kubectl rollout status statefulset/rabbitmq -n online-judge --timeout=120s
-	kubectl rollout status deployment/redis -n online-judge --timeout=120s
-	kubectl rollout status deployment/user-service -n online-judge --timeout=120s
-	kubectl rollout status deployment/quiz-service -n online-judge --timeout=120s
-	kubectl rollout status deployment/attempt-service -n online-judge --timeout=120s
-	kubectl rollout status deployment/code-eval-service -n online-judge --timeout=120s
-	kubectl rollout status deployment/gateway -n online-judge --timeout=120s
-	kubectl rollout status deployment/client -n online-judge --timeout=120s
+	kubectl rollout status statefulset/postgres -n online-judge --timeout=300s
+	kubectl rollout status statefulset/rabbitmq -n online-judge --timeout=300s
+	kubectl rollout status deployment/redis -n online-judge --timeout=300s
+	kubectl rollout status deployment/user-service -n online-judge --timeout=300s
+	kubectl rollout status deployment/quiz-service -n online-judge --timeout=300s
+	kubectl rollout status deployment/attempt-service -n online-judge --timeout=300s
+	kubectl rollout status deployment/code-eval-service -n online-judge --timeout=300s
+	kubectl rollout status deployment/gateway -n online-judge --timeout=300s
+	kubectl rollout status deployment/client -n online-judge --timeout=300s
 endef
 
 k8s-up: secrets/rabbitmq.conf
