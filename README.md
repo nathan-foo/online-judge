@@ -98,13 +98,15 @@ The evaluation service executes untrusted user code on network-isolated, single-
 
 ## Benchmark Testing
 
+### API Gateway
+
 The following benchmark was measured against a local Docker setup using [hey](https://github.com/rakyll/hey) and tests the overhead latency of the custom API gateway.
 
 ```
 hey -z 30s -c 100 http://localhost:8080/bench
 ```
 
-### Direct Path
+#### Direct Path
 
 ```
 Summary:
@@ -151,7 +153,7 @@ Status code distribution:
   [200]	1000000 responses
 ```
 
-### Gateway Path
+#### Gateway Path
 
 ```
 Summary:
@@ -198,7 +200,7 @@ Status code distribution:
   [200]	491919 responses
 ```
 
-### Results
+#### Results
 
 Results were calculated by recording the delta between the direct API call and the gateway chain.
 
@@ -213,3 +215,16 @@ Results were calculated by recording the delta between the direct API call and t
 | p50    | +3.3 ms  |
 | p95    | +6.9 ms  |
 | p99    | +10.3 ms |
+
+### Code Evaluation Service
+
+The following benchmark measures end-to-end submission latency for the code evaluation service using a warm pool of pods vs. a cold start using a custom harness. Note that the warm pool results are based on steady state warm latency.
+
+#### Results
+
+Using a warm pool, code submissions are judged ~11.5x faster vs. a cold pod start per run.
+
+| method   | min ms    | avg ms     | p50 ms     | p95 ms     | max ms     |
+|----------|-----------|------------|------------|------------|------------|
+| warm     |  164.7    |   253.8    |   235.7    |   306.8    |   354.6    |
+| cold     | 2181.9    |  2918.1    |  2898.7    |  3163.7    |  3201.0    |
