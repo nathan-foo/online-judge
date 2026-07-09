@@ -1,17 +1,31 @@
 import uuid
 import enum
-from sqlalchemy import String, DateTime, Uuid, Integer, ForeignKey, Text, UniqueConstraint, Index, Boolean, Enum, CheckConstraint, text
+from datetime import datetime
+from typing import Optional
+from sqlalchemy import (
+    String,
+    DateTime,
+    Uuid,
+    Integer,
+    ForeignKey,
+    Text,
+    UniqueConstraint,
+    Index,
+    Boolean,
+    Enum,
+    CheckConstraint,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from typing import Optional
-from datetime import datetime
 from .database import Base
 
 
 class ProblemType(str, enum.Enum):
     MULTIPLE_CHOICE = "multiple_choice"
     CODE = "code"
+
 
 class Quiz(Base):
     __tablename__ = "quizzes"
@@ -64,10 +78,17 @@ class Quiz(Base):
     def __repr__(self) -> str:
         return f"<Quiz(id={self.id}, title={self.title})>"
 
+
 class QuizProblem(Base):
     __tablename__ = "quiz_problems"
     __table_args__ = (
-        UniqueConstraint("quiz_id", "position", name="uq_quiz_position", deferrable=True, initially="DEFERRED"),
+        UniqueConstraint(
+            "quiz_id",
+            "position",
+            name="uq_quiz_position",
+            deferrable=True,
+            initially="DEFERRED",
+        ),
         CheckConstraint("position >= 1", name="ck_quiz_problem_position_positive"),
     )
 

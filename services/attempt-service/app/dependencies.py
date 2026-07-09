@@ -1,6 +1,6 @@
+from typing import Annotated, Optional
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Annotated, Optional
 from .database import get_async_session
 
 AsyncSessionDep = Annotated[AsyncSession, Depends(get_async_session)]

@@ -4,7 +4,7 @@ from typing import Awaitable, Callable, Optional
 import aio_pika
 
 try:
-    with open("/run/secrets/rabbitmq_password") as f:
+    with open("/run/secrets/rabbitmq_password", encoding="utf-8") as f:
         rabbitmq_password = f.read().strip()
 except FileNotFoundError:
     rabbitmq_password = os.environ.get("RABBITMQ_PASSWORD", "guest")
@@ -30,9 +30,13 @@ class Broker:
         self.exchange = await self.channel.declare_exchange(
             CODE_EVAL_EXCHANGE, aio_pika.ExchangeType.DIRECT, durable=True
         )
-        requests_queue = await self.channel.declare_queue(EVAL_REQUESTS_QUEUE, durable=True)
+        requests_queue = await self.channel.declare_queue(
+            EVAL_REQUESTS_QUEUE, durable=True
+        )
         await requests_queue.bind(self.exchange, routing_key=EVAL_REQUESTS_QUEUE)
-        self.results_queue = await self.channel.declare_queue(EVAL_RESULTS_QUEUE, durable=True)
+        self.results_queue = await self.channel.declare_queue(
+            EVAL_RESULTS_QUEUE, durable=True
+        )
         await self.results_queue.bind(self.exchange, routing_key=EVAL_RESULTS_QUEUE)
 
     async def close(self) -> None:

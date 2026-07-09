@@ -8,7 +8,15 @@ from sqlalchemy.orm import load_only, selectinload
 from sqlalchemy.orm.exc import StaleDataError
 from sqlalchemy.sql import func
 from .models import Quiz, QuizProblem
-from .schemas import QuizCreate, QuizProblemCreate, QuizProblemUpsert, QuizPublicRead, QuizPublish, QuizRead, QuizUpdate
+from .schemas import (
+    QuizCreate,
+    QuizProblemCreate,
+    QuizProblemUpsert,
+    QuizPublicRead,
+    QuizPublish,
+    QuizRead,
+    QuizUpdate,
+)
 
 
 def _build_problem(p: QuizProblemCreate | QuizProblemUpsert) -> QuizProblem:
@@ -67,9 +75,7 @@ _QUIZ_SUMMARY_LOAD = load_only(
 
 
 async def create_quiz(
-    session: AsyncSession,
-    owner_id: str,
-    quiz_in: QuizCreate
+    session: AsyncSession, owner_id: str, quiz_in: QuizCreate
 ) -> Quiz:
     quiz = Quiz(
         owner_id=owner_id,
@@ -82,19 +88,16 @@ async def create_quiz(
     session.add(quiz)
     try:
         await session.flush()
-    except IntegrityError:
+    except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Duplicate position in quiz",
-        )
+        ) from exc
     return await get_owned_quiz(session, owner_id, quiz.id)
 
 
 async def list_quizzes(
-    session: AsyncSession,
-    owner_id: str,
-    limit: int,
-    offset: int
+    session: AsyncSession, owner_id: str, limit: int, offset: int
 ) -> list[Quiz]:
     result = await session.execute(
         select(Quiz)
@@ -108,13 +111,13 @@ async def list_quizzes(
 
 
 async def list_public_quizzes(
-    session: AsyncSession,
-    limit: int,
-    offset: int
+    session: AsyncSession, limit: int, offset: int
 ) -> list[Quiz]:
     result = await session.execute(
         select(Quiz)
-        .where(Quiz.is_public == True, Quiz.is_published == True, Quiz.is_deleted == False)
+        .where(
+            Quiz.is_public == True, Quiz.is_published == True, Quiz.is_deleted == False
+        )
         .options(_QUIZ_SUMMARY_LOAD)
         .order_by(Quiz.created_at.desc())
         .limit(limit)
@@ -124,9 +127,7 @@ async def list_public_quizzes(
 
 
 async def get_quiz(
-    session: AsyncSession,
-    viewer_id: str,
-    quiz_id: uuid.UUID
+    session: AsyncSession, viewer_id: str, quiz_id: uuid.UUID
 ) -> Quiz | QuizPublicRead:
     result = await session.execute(
         select(Quiz)
@@ -134,7 +135,9 @@ async def get_quiz(
         .options(selectinload(Quiz.problems))
     )
     quiz = result.scalar_one_or_none()
-    if not quiz or (quiz.owner_id != viewer_id and not (quiz.is_public and quiz.is_published)):
+    if not quiz or (
+        quiz.owner_id != viewer_id and not (quiz.is_public and quiz.is_published)
+    ):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Quiz not found",
@@ -145,14 +148,20 @@ async def get_quiz(
 
 
 async def get_quiz_snapshot(
-    session: AsyncSession,
-    viewer_id: str,
-    quiz_id: uuid.UUID
+    session: AsyncSession, viewer_id: str, quiz_id: uuid.UUID
 ) -> dict:
     result = await session.execute(
         select(Quiz)
         .where(Quiz.id == quiz_id, Quiz.is_deleted == False)
-        .options(load_only(Quiz.id, Quiz.owner_id, Quiz.is_public, Quiz.is_published, Quiz.published_snapshot))
+        .options(
+            load_only(
+                Quiz.id,
+                Quiz.owner_id,
+                Quiz.is_public,
+                Quiz.is_published,
+                Quiz.published_snapshot,
+            )
+        )
     )
     quiz = result.scalar_one_or_none()
     if (
@@ -168,9 +177,7 @@ async def get_quiz_snapshot(
 
 
 async def get_owned_quiz(
-    session: AsyncSession,
-    owner_id: str,
-    quiz_id: uuid.UUID
+    session: AsyncSession, owner_id: str, quiz_id: uuid.UUID
 ) -> Quiz:
     result = await session.execute(
         select(Quiz)
@@ -186,11 +193,7 @@ async def get_owned_quiz(
     return quiz
 
 
-async def update_quiz(
-    session: AsyncSession,
-    quiz: Quiz,
-    quiz_in: QuizUpdate
-) -> Quiz:
+async def update_quiz(session: AsyncSession, quiz: Quiz, quiz_in: QuizUpdate) -> Quiz:
     if quiz_in.version != quiz.version:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -204,31 +207,28 @@ async def update_quiz(
         quiz.updated_at = func.now()
     try:
         await session.flush()
-    except StaleDataError:
+    except StaleDataError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Quiz was modified by another request",
-        )
-    except IntegrityError:
+        ) from exc
+    except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Duplicate position in quiz",
-        )
+        ) from exc
     return await get_owned_quiz(session, quiz.owner_id, quiz.id)
 
 
-async def delete_quiz(
-    session: AsyncSession,
-    quiz: Quiz
-) -> None:
+async def delete_quiz(session: AsyncSession, quiz: Quiz) -> None:
     quiz.is_deleted = True
     try:
         await session.flush()
-    except StaleDataError:
+    except StaleDataError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Quiz was modified by another request",
-        )
+        ) from exc
 
 
 async def publish_quiz(
@@ -251,9 +251,9 @@ async def publish_quiz(
     quiz.published_snapshot = QuizRead.model_validate(quiz).model_dump(mode="json")
     try:
         await session.flush()
-    except StaleDataError:
+    except StaleDataError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Quiz was modified by another request",
-        )
+        ) from exc
     return await get_owned_quiz(session, quiz.owner_id, quiz.id)

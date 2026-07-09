@@ -1,0 +1,36 @@
+name: user-service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/user-service/**"
+      - ".github/workflows/user-service-ci.yml"
+  pull_request:
+    paths:
+      - "services/user-service/**"
+      - ".github/workflows/user-service-ci.yml"
+
+jobs:
+  user-service:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: services/user-service
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: services/user-service/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt pylint black
+      - name: Run black
+        run: black --check app
+      - name: Run pylint
+        run: pylint --rcfile ../../.pylintrc app
+      - name: Run build
+        run: python -m compileall app

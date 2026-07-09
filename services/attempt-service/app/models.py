@@ -1,11 +1,22 @@
 import uuid
 import enum
-from sqlalchemy import String, DateTime, Uuid, Integer, ForeignKey, UniqueConstraint, Index, Boolean, Enum, text
+from datetime import datetime
+from typing import Optional
+from sqlalchemy import (
+    String,
+    DateTime,
+    Uuid,
+    Integer,
+    ForeignKey,
+    UniqueConstraint,
+    Index,
+    Boolean,
+    Enum,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from typing import Optional
-from datetime import datetime
 from .database import Base
 
 
@@ -91,7 +102,9 @@ class AttemptAnswer(Base):
     is_correct: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     points_awarded: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
-    eval_status: Mapped[Optional[EvalStatus]] = mapped_column(Enum(EvalStatus), nullable=True)
+    eval_status: Mapped[Optional[EvalStatus]] = mapped_column(
+        Enum(EvalStatus), nullable=True
+    )
     eval_result: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
 
     updated_at: Mapped[datetime] = mapped_column(

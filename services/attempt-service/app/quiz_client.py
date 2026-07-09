@@ -14,11 +14,11 @@ async def fetch_quiz_snapshot(user_id: str, quiz_id: uuid.UUID) -> dict:
             f"/internal/{quiz_id}/snapshot",
             headers={"X-User-Id": user_id},
         )
-    except httpx.HTTPError:
+    except httpx.HTTPError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Quiz service unavailable",
-        )
+        ) from exc
     if response.status_code == status.HTTP_404_NOT_FOUND:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

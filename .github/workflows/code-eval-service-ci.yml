@@ -1,0 +1,29 @@
+name: code-eval-service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/code-eval-service/**"
+      - ".github/workflows/code-eval-service-ci.yml"
+  pull_request:
+    paths:
+      - "services/code-eval-service/**"
+      - ".github/workflows/code-eval-service-ci.yml"
+
+jobs:
+  code-eval-service:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: services/code-eval-service
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: services/code-eval-service/go.mod
+          cache-dependency-path: services/code-eval-service/go.sum
+      - name: Run build
+        run: go build ./...

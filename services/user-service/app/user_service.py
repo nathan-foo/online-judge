@@ -7,7 +7,9 @@ from .schemas import UserCreate, UserUpdate
 
 
 async def sync_user(session: AsyncSession, user_in: UserCreate) -> None:
-    result = await session.execute(select(User).where(User.clerk_user_id == user_in.clerk_user_id))
+    result = await session.execute(
+        select(User).where(User.clerk_user_id == user_in.clerk_user_id)
+    )
     user = result.scalar_one_or_none()
     if user:
         for field, value in user_in.model_dump().items():
@@ -18,7 +20,9 @@ async def sync_user(session: AsyncSession, user_in: UserCreate) -> None:
 
 
 async def get_user(session: AsyncSession, clerk_user_id: str) -> User:
-    result = await session.execute(select(User).where(User.clerk_user_id == clerk_user_id))
+    result = await session.execute(
+        select(User).where(User.clerk_user_id == clerk_user_id)
+    )
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(
@@ -29,7 +33,9 @@ async def get_user(session: AsyncSession, clerk_user_id: str) -> User:
 
 
 async def deactivate_user(session: AsyncSession, clerk_user_id: str) -> None:
-    result = await session.execute(select(User).where(User.clerk_user_id == clerk_user_id))
+    result = await session.execute(
+        select(User).where(User.clerk_user_id == clerk_user_id)
+    )
     user = result.scalar_one_or_none()
     if user:
         user.is_active = False
@@ -41,10 +47,10 @@ async def update_user(session: AsyncSession, user: User, user_in: UserUpdate) ->
         setattr(user, field, value)
     try:
         await session.flush()
-    except IntegrityError:
+    except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="User with this username already exists",
-        )
+        ) from exc
     await session.refresh(user)
     return user

@@ -4,12 +4,21 @@ from fastapi import FastAPI, HTTPException, Query, status
 from sqlalchemy import text
 from .database import engine, Base
 from .dependencies import AsyncSessionDep, CurrentUserIdDep
-from .schemas import QuizCreate, QuizPublicRead, QuizPublish, QuizRead, QuizSummary, QuizUpdate
-from . import models, quiz_service  # noqa: F401 — registers Quiz on Base.metadata
+from .schemas import (
+    QuizCreate,
+    QuizPublicRead,
+    QuizPublish,
+    QuizRead,
+    QuizSummary,
+    QuizUpdate,
+)
+
+# models imported for its create_all side effect (registers Quiz on Base.metadata)
+from . import models, quiz_service  # noqa: F401  # pylint: disable=unused-import
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
@@ -28,18 +37,17 @@ async def readyz():
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
-    except Exception:
+    except Exception as exc:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="database unavailable"
-        )
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="database unavailable",
+        ) from exc
     return {"status": "ready"}
 
 
 @app.post("/", response_model=QuizRead, status_code=status.HTTP_201_CREATED)
 async def create_quiz(
-    quiz_in: QuizCreate,
-    user_id: CurrentUserIdDep,
-    session: AsyncSessionDep
+    quiz_in: QuizCreate, user_id: CurrentUserIdDep, session: AsyncSessionDep
 ):
     return await quiz_service.create_quiz(session, user_id, quiz_in)
 
@@ -65,18 +73,14 @@ async def list_public_quizzes(
 
 @app.get("/internal/{quiz_id}/snapshot", response_model=QuizRead)
 async def get_quiz_snapshot(
-    quiz_id: uuid.UUID,
-    user_id: CurrentUserIdDep,
-    session: AsyncSessionDep
+    quiz_id: uuid.UUID, user_id: CurrentUserIdDep, session: AsyncSessionDep
 ):
     return await quiz_service.get_quiz_snapshot(session, user_id, quiz_id)
 
 
 @app.get("/{quiz_id}", response_model=QuizRead | QuizPublicRead)
 async def get_quiz(
-    quiz_id: uuid.UUID,
-    user_id: CurrentUserIdDep,
-    session: AsyncSessionDep
+    quiz_id: uuid.UUID, user_id: CurrentUserIdDep, session: AsyncSessionDep
 ):
     return await quiz_service.get_quiz(session, user_id, quiz_id)
 
@@ -86,7 +90,7 @@ async def update_quiz(
     quiz_id: uuid.UUID,
     quiz_in: QuizUpdate,
     user_id: CurrentUserIdDep,
-    session: AsyncSessionDep
+    session: AsyncSessionDep,
 ):
     quiz = await quiz_service.get_owned_quiz(session, user_id, quiz_id)
     return await quiz_service.update_quiz(session, quiz, quiz_in)
@@ -94,9 +98,7 @@ async def update_quiz(
 
 @app.delete("/{quiz_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_quiz(
-    quiz_id: uuid.UUID,
-    user_id: CurrentUserIdDep,
-    session: AsyncSessionDep
+    quiz_id: uuid.UUID, user_id: CurrentUserIdDep, session: AsyncSessionDep
 ):
     quiz = await quiz_service.get_owned_quiz(session, user_id, quiz_id)
     await quiz_service.delete_quiz(session, quiz)
@@ -107,7 +109,7 @@ async def publish_quiz(
     quiz_id: uuid.UUID,
     publish_in: QuizPublish,
     user_id: CurrentUserIdDep,
-    session: AsyncSessionDep
+    session: AsyncSessionDep,
 ):
     quiz = await quiz_service.get_owned_quiz(session, user_id, quiz_id)
     return await quiz_service.publish_quiz(session, quiz, publish_in)

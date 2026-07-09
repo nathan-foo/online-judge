@@ -5,8 +5,18 @@ from sqlalchemy import text
 from .database import engine, Base, async_session_maker
 from .dependencies import AsyncSessionDep, CurrentUserIdDep
 from .messaging import broker
-from .schemas import AnswerPayload, AttemptAnswerRead, AttemptCreate, AttemptRead, AttemptSummary
-from . import attempt_service, models, quiz_client  # noqa: F401 — registers Attempt on Base.metadata
+from .schemas import (
+    AnswerPayload,
+    AttemptAnswerRead,
+    AttemptCreate,
+    AttemptRead,
+    AttemptSummary,
+)
+from . import (  # pylint: disable=unused-import
+    attempt_service,
+    models,
+    quiz_client,
+)  # noqa: F401 — registers Attempt on Base.metadata
 
 
 async def _handle_eval_result(payload: dict) -> None:
@@ -16,7 +26,7 @@ async def _handle_eval_result(payload: dict) -> None:
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     await broker.connect()
@@ -39,10 +49,11 @@ async def readyz():
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
-    except Exception:
+    except Exception as exc:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="database unavailable"
-        )
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="database unavailable",
+        ) from exc
     if broker.connection is None or broker.connection.is_closed:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="broker unavailable"
@@ -52,9 +63,7 @@ async def readyz():
 
 @app.post("/", response_model=AttemptRead, status_code=status.HTTP_201_CREATED)
 async def start_attempt(
-    attempt_in: AttemptCreate,
-    user_id: CurrentUserIdDep,
-    session: AsyncSessionDep
+    attempt_in: AttemptCreate, user_id: CurrentUserIdDep, session: AsyncSessionDep
 ):
     attempt = await attempt_service.start_attempt(session, user_id, attempt_in.quiz_id)
     return attempt_service.to_attempt_read(attempt)
@@ -72,9 +81,7 @@ async def list_attempts(
 
 @app.get("/{attempt_id}", response_model=AttemptRead)
 async def get_attempt(
-    attempt_id: uuid.UUID,
-    user_id: CurrentUserIdDep,
-    session: AsyncSessionDep
+    attempt_id: uuid.UUID, user_id: CurrentUserIdDep, session: AsyncSessionDep
 ):
     attempt = await attempt_service.get_owned_attempt(session, user_id, attempt_id)
     return attempt_service.to_attempt_read(attempt)
@@ -86,7 +93,7 @@ async def save_answer(
     problem_id: uuid.UUID,
     answer_in: AnswerPayload,
     user_id: CurrentUserIdDep,
-    session: AsyncSessionDep
+    session: AsyncSessionDep,
 ):
     attempt = await attempt_service.get_owned_attempt(session, user_id, attempt_id)
     return await attempt_service.save_answer(session, attempt, problem_id, answer_in)
@@ -97,11 +104,11 @@ async def submit_attempt(
     attempt_id: uuid.UUID,
     user_id: CurrentUserIdDep,
     session: AsyncSessionDep,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
 ):
     attempt = await attempt_service.get_owned_attempt(session, user_id, attempt_id)
     attempt, eval_requests = await attempt_service.submit_attempt(session, attempt)
-    
+
     for request in eval_requests:
         background_tasks.add_task(broker.publish_eval_request, request)
     return attempt_service.to_attempt_read(attempt)

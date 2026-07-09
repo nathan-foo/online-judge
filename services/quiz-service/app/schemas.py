@@ -55,7 +55,9 @@ class MultipleChoicePayload(BaseModel):
         if unknown:
             raise ValueError(f"correct_choice_ids reference unknown choices: {unknown}")
         if not self.multiple_correct and len(self.correct_choice_ids) != 1:
-            raise ValueError("single-answer questions must have exactly one correct choice")
+            raise ValueError(
+                "single-answer questions must have exactly one correct choice"
+            )
         return self
 
 
@@ -77,7 +79,9 @@ class CodePayload(BaseModel):
         for field_name in ("starter_code", "reference_solutions"):
             extra = set(getattr(self, field_name).keys()) - set(self.languages)
             if extra:
-                raise ValueError(f"{field_name} references languages not in `languages`: {extra}")
+                raise ValueError(
+                    f"{field_name} references languages not in `languages`: {extra}"
+                )
         if not any(t.is_example for t in self.test_cases):
             raise ValueError("at least one test case must be an example")
         return self
@@ -133,7 +137,7 @@ class QuizUpdate(BaseModel):
     is_public: Optional[bool] = None
     problems: Optional[list[QuizProblemUpsert]] = None
     version: int = Field(ge=0)
-    
+
     @model_validator(mode="after")
     def _validate(self):
         if self.problems is None:

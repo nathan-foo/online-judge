@@ -19,7 +19,9 @@ def _taker_view_problem(problem: dict, include_answers: bool) -> dict:
     else:
         payload.pop("reference_solutions", None)
         if not include_answers:
-            payload["test_cases"] = [t for t in payload["test_cases"] if t["is_example"]]
+            payload["test_cases"] = [
+                t for t in payload["test_cases"] if t["is_example"]
+            ]
     return {**problem, "payload": payload}
 
 
@@ -58,9 +60,7 @@ def _problems_by_id(snapshot: dict) -> dict[str, dict]:
 
 
 async def start_attempt(
-    session: AsyncSession,
-    user_id: str,
-    quiz_id: uuid.UUID
+    session: AsyncSession, user_id: str, quiz_id: uuid.UUID
 ) -> Attempt:
     snapshot = await quiz_client.fetch_quiz_snapshot(user_id, quiz_id)
     attempt = Attempt(
@@ -75,19 +75,16 @@ async def start_attempt(
     session.add(attempt)
     try:
         await session.flush()
-    except IntegrityError:
+    except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="An attempt for this quiz is already in progress",
-        )
+        ) from exc
     return await get_owned_attempt(session, user_id, attempt.id)
 
 
 async def list_attempts(
-    session: AsyncSession,
-    user_id: str,
-    limit: int,
-    offset: int
+    session: AsyncSession, user_id: str, limit: int, offset: int
 ) -> list[Attempt]:
     result = await session.execute(
         select(Attempt)
@@ -100,9 +97,7 @@ async def list_attempts(
 
 
 async def get_owned_attempt(
-    session: AsyncSession,
-    user_id: str,
-    attempt_id: uuid.UUID
+    session: AsyncSession, user_id: str, attempt_id: uuid.UUID
 ) -> Attempt:
     result = await session.execute(
         select(Attempt)
@@ -150,7 +145,7 @@ async def save_answer(
     session: AsyncSession,
     attempt: Attempt,
     problem_id: uuid.UUID,
-    answer_in: AnswerPayload
+    answer_in: AnswerPayload,
 ) -> AttemptAnswer:
     if attempt.status != AttemptStatus.IN_PROGRESS:
         raise HTTPException(
@@ -203,8 +198,7 @@ def _build_eval_request(attempt: Attempt, answer: AttemptAnswer, problem: dict) 
 
 
 async def submit_attempt(
-    session: AsyncSession,
-    attempt: Attempt
+    session: AsyncSession, attempt: Attempt
 ) -> tuple[Attempt, list[dict]]:
     if attempt.status != AttemptStatus.IN_PROGRESS:
         raise HTTPException(

@@ -1,0 +1,36 @@
+name: quiz-service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/quiz-service/**"
+      - ".github/workflows/quiz-service-ci.yml"
+  pull_request:
+    paths:
+      - "services/quiz-service/**"
+      - ".github/workflows/quiz-service-ci.yml"
+
+jobs:
+  quiz-service:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: services/quiz-service
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: services/quiz-service/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt pylint black
+      - name: Run black
+        run: black --check app
+      - name: Run pylint
+        run: pylint --rcfile ../../.pylintrc app
+      - name: Run build
+        run: python -m compileall app

@@ -1,0 +1,10 @@
+[MESSAGES CONTROL]
+disable=
+    missing-docstring,
+    too-few-public-methods,
+    singleton-comparison,
+    not-callable,
+    not-an-iterable
+
+[FORMAT]
+max-line-length=88
